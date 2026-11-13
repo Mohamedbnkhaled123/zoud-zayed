@@ -412,4 +412,127 @@ describe('App Component', () => {
     const phoneBtn = compiled.querySelector('.phone-copy-pill');
     expect(phoneBtn).toBeTruthy();
   });
+
+  it('should switch between tabs including days tab', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.setTab('days');
+    expect(app.currentTab()).toBe('days');
+  });
+});
+
+describe('Child Schedule Days & Attend/Cancel/No Show & Cover Sessions', () => {
+  let dataService: DataService;
+
+  beforeEach(() => {
+    storageMap.clear();
+    TestBed.configureTestingModule({
+      providers: [DataService]
+    });
+    dataService = TestBed.inject(DataService);
+  });
+
+  it('should support saving and updating child weekly scheduleDays', () => {
+    const child = dataService.addChild({
+      name: 'عمر شريف',
+      age: 7,
+      diagnosis: 'فرط حركة',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1',
+      notes: '',
+      scheduleDays: ['السبت', 'الإثنين', 'الأربعاء']
+    });
+
+    expect(child.scheduleDays).toEqual(['السبت', 'الإثنين', 'الأربعاء']);
+    const fetched = dataService.getChildById(child.id);
+    expect(fetched?.scheduleDays).toContain('السبت');
+    expect(fetched?.scheduleDays).toContain('الأربعاء');
+
+    // Update schedule
+    dataService.updateChild({
+      ...child,
+      scheduleDays: ['الأحد', 'الثلاثاء']
+    });
+    const updated = dataService.getChildById(child.id);
+    expect(updated?.scheduleDays).toEqual(['الأحد', 'الثلاثاء']);
+  });
+
+  it('should support Attend, Cancel, No Show attendance statuses', () => {
+    const today = getTodayString();
+    const child = dataService.addChild({
+      name: 'زين أحمد',
+      age: 4,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1',
+      notes: ''
+    });
+
+    // 1. Attend
+    const s1 = dataService.recordAttendance(child.id, 'spec-1', today, 'attended');
+    expect(s1.status).toBe('attended');
+
+    // 2. Cancel
+    const s2 = dataService.recordAttendance(child.id, 'spec-1', today, 'cancelled');
+    expect(s2.status).toBe('cancelled');
+
+    // 3. No Show (absent)
+    const s3 = dataService.recordAttendance(child.id, 'spec-1', today, 'absent');
+    expect(s3.status).toBe('absent');
+  });
+
+  it('should allow clearing accidental attendance completely', () => {
+    const today = getTodayString();
+    const child = dataService.addChild({
+      name: 'ليلى هاني',
+      age: 5,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1',
+      notes: ''
+    });
+
+    // Mark attended by mistake
+    dataService.recordAttendance(child.id, 'spec-1', today, 'attended');
+    expect(dataService.getSessionForChildAndDate(child.id, today)).toBeDefined();
+
+    // Cancel / remove accidental attendance
+    const removed = dataService.removeAttendance(child.id, today);
+    expect(removed).toBe(true);
+    expect(dataService.getSessionForChildAndDate(child.id, today)).toBeUndefined();
+  });
+
+  it('should record cover session for absent colleague with isCover and colleague name', () => {
+    const today = getTodayString();
+    const child = dataService.addChild({
+      name: 'أحمد ماهر',
+      age: 6,
+      diagnosis: 'تأخر نمو لغوي',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-colleague',
+      notes: ''
+    });
+
+    const coverSession = dataService.recordAttendance(
+      child.id,
+      'spec-covering',
+      today,
+      'attended',
+      250,
+      'جلسة تغطية لغياب الزميل',
+      true,
+      'د. حسام عادل',
+      'spec-colleague'
+    );
+
+    expect(coverSession.isCover).toBe(true);
+    expect(coverSession.coveredSpecialistName).toBe('د. حسام عادل');
+    expect(coverSession.coveredSpecialistId).toBe('spec-colleague');
+    expect(coverSession.specialistId).toBe('spec-covering');
+    expect(coverSession.price).toBe(250);
+  });
 });

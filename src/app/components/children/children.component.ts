@@ -19,6 +19,8 @@ export class ChildrenComponent {
   readonly authService = inject(AuthService);
   readonly toast = inject(ToastService);
 
+  readonly WEEK_DAYS = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+
   // Search & Filter
   readonly searchQuery = signal<string>('');
   readonly selectedDiagnosisFilter = signal<string>('all');
@@ -67,6 +69,7 @@ export class ChildrenComponent {
   guardianPhone = signal<string>('');
   childSpecialistId = signal<string>('');
   childSessionPrice = signal<number | null>(null);
+  childScheduleDays = signal<string[]>([]);
   childNotes = signal<string>('');
 
   // Child history view modal
@@ -112,6 +115,15 @@ export class ChildrenComponent {
     return list;
   });
 
+  toggleScheduleDay(day: string): void {
+    const cur = this.childScheduleDays();
+    if (cur.includes(day)) {
+      this.childScheduleDays.set(cur.filter(d => d !== day));
+    } else {
+      this.childScheduleDays.set([...cur, day]);
+    }
+  }
+
   openAddModal(): void {
     const user = this.authService.currentUser();
     if (!user) {
@@ -127,6 +139,7 @@ export class ChildrenComponent {
     this.guardianName.set('');
     this.guardianPhone.set('');
     this.childSessionPrice.set(null);
+    this.childScheduleDays.set([]);
     this.childNotes.set('');
     this.childSpecialistId.set(user.id);
 
@@ -169,6 +182,7 @@ export class ChildrenComponent {
         guardianPhone: this.guardianPhone().trim(),
         specialistId: user.id,
         sessionPrice: priceVal,
+        scheduleDays: this.childScheduleDays(),
         notes: this.childNotes().trim(),
         createdAt: existing.createdAt || getTodayString()
       };
@@ -182,6 +196,7 @@ export class ChildrenComponent {
         guardianPhone: this.guardianPhone().trim(),
         specialistId: user.id,
         sessionPrice: priceVal,
+        scheduleDays: this.childScheduleDays(),
         notes: this.childNotes().trim()
       });
     }
@@ -213,8 +228,20 @@ export class ChildrenComponent {
       return;
     }
     const today = getTodayString();
+    const curStatus = this.getTodayStatus(child.id);
+
+    // Toggle off if already active!
+    if (curStatus === status) {
+      this.dataService.removeAttendance(child.id, today);
+      return;
+    }
+
     const effectivePrice = this.getChildEffectivePrice(child);
     this.dataService.recordAttendance(child.id, user.id, today, status, effectivePrice);
+  }
+
+  clearTodayAttendance(child: Child): void {
+    this.dataService.removeAttendance(child.id, getTodayString());
   }
 
   openEditModal(child: Child): void {
@@ -232,6 +259,7 @@ export class ChildrenComponent {
     this.guardianPhone.set(child.guardianPhone || '');
     this.childSpecialistId.set(user.id);
     this.childSessionPrice.set(child.sessionPrice || null);
+    this.childScheduleDays.set(child.scheduleDays || []);
     this.childNotes.set(child.notes || '');
 
     this.showChildModal.set(true);

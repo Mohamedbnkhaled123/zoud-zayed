@@ -146,14 +146,17 @@ export class DataService {
     this.toast.showInfo('تم الحذف');
   }
 
-  // Attendance & Session Recording (Strictly Attended or Absent)
+  // Attendance & Session Recording (Attend, Cancel, No Show)
   recordAttendance(
     childId: string,
     specialistId: string,
     date: string,
     status: AttendanceStatus,
     price?: number,
-    notes?: string
+    notes?: string,
+    isCover?: boolean,
+    coveredSpecialistName?: string,
+    coveredSpecialistId?: string
   ): SessionRecord {
     const child = this.children().find(c => c.id === childId);
     const effectivePrice = price !== undefined
@@ -173,7 +176,10 @@ export class DataService {
         status,
         specialistId,
         price: effectivePrice,
-        notes: notes !== undefined ? notes : existing.notes
+        notes: notes !== undefined ? notes : existing.notes,
+        isCover: isCover !== undefined ? isCover : existing.isCover,
+        coveredSpecialistName: coveredSpecialistName !== undefined ? coveredSpecialistName : existing.coveredSpecialistName,
+        coveredSpecialistId: coveredSpecialistId !== undefined ? coveredSpecialistId : existing.coveredSpecialistId
       };
 
       const updated = [...this.sessions()];
@@ -187,6 +193,9 @@ export class DataService {
         date,
         status,
         price: effectivePrice,
+        isCover: !!isCover,
+        coveredSpecialistName: coveredSpecialistName || '',
+        coveredSpecialistId: coveredSpecialistId || '',
         notes: notes || '',
         createdAt: getTodayString()
       };
@@ -197,20 +206,48 @@ export class DataService {
 
     const childName = child ? child.name : 'الطفل';
     const arabicFormatted = formatArabicDate(date);
+    const coverText = recordedSession.isCover ? ' (جلسة تغطية Cover)' : '';
+
     if (status === 'attended') {
       this.toast.showSuccess(
-        `تم تسجيل حضور الطفل "${childName}" بتاريخ ${date} (${arabicFormatted}) بنجاح`,
-        'تسجيل الحضور',
+        `تم تسجيل Attend للطفل "${childName}"${coverText} بتاريخ ${date} (${arabicFormatted})`,
+        'Attend',
         date
+      );
+    } else if (status === 'cancelled') {
+      this.toast.showInfo(
+        `تم تسجيل Cancel للطفل "${childName}"${coverText} بتاريخ ${date}`,
+        'Cancel'
       );
     } else {
       this.toast.showError(
-        `تم تسجيل غياب الطفل "${childName}" بتاريخ ${date} (${arabicFormatted})`,
-        'تسجيل غياب'
+        `تم تسجيل No Show للطفل "${childName}"${coverText} بتاريخ ${date}`,
+        'No Show'
       );
     }
 
     return recordedSession;
+  }
+
+  removeAttendance(childId: string, date: string): boolean {
+    const child = this.children().find(c => c.id === childId);
+    const existing = this.sessions().find(s => s.childId === childId && s.date === date);
+    if (!existing) return false;
+
+    this.sessions.update(list => list.filter(s => !(s.childId === childId && s.date === date)));
+    this.persist();
+
+    const childName = child ? child.name : 'الطفل';
+    this.toast.showInfo(`تم إلغاء تسجيل الحالة للطفل "${childName}" بنجاح`);
+    return true;
+  }
+
+  deleteSession(sessionId: string): void {
+    const s = this.sessions().find(item => item.id === sessionId);
+    if (!s) return;
+    this.sessions.update(list => list.filter(item => item.id !== sessionId));
+    this.persist();
+    this.toast.showInfo('تم حذف الجلسة بنجاح');
   }
 
   // Settings & Session Calculation Toggle

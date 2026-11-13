@@ -17,11 +17,12 @@ export interface Child {
   guardianPhone: string;
   specialistId: string;
   sessionPrice?: number;
+  scheduleDays?: string[]; // e.g. ['السبت', 'الإثنين', 'الأربعاء']
   notes?: string;
   createdAt: string;
 }
 
-export type AttendanceStatus = 'attended' | 'absent';
+export type AttendanceStatus = 'attended' | 'cancelled' | 'absent';
 
 export interface SessionRecord {
   id: string;
@@ -30,6 +31,9 @@ export interface SessionRecord {
   date: string; // format YYYY-MM-DD
   status: AttendanceStatus;
   price?: number;
+  isCover?: boolean;
+  coveredSpecialistName?: string;
+  coveredSpecialistId?: string;
   notes?: string;
   createdAt: string;
 }

@@ -5,6 +5,7 @@ import { FooterComponent } from './components/footer/footer.component';
 import { ToastComponent } from './components/toast/toast.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { ChildrenComponent } from './components/children/children.component';
+import { AttendanceComponent } from './components/attendance/attendance.component';
 import { AdminSpecialistsComponent } from './components/admin-specialists/admin-specialists.component';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
 import { AuthService } from './services/auth.service';
@@ -19,6 +20,7 @@ import { AuthService } from './services/auth.service';
     ToastComponent,
     DashboardComponent,
     ChildrenComponent,
+    AttendanceComponent,
     AdminSpecialistsComponent,
     AuthModalComponent
   ],

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 
-export type ActiveTab = 'children' | 'dashboard' | 'admin-specialists';
+export type ActiveTab = 'children' | 'days' | 'dashboard' | 'admin-specialists';
 
 @Component({
   selector: 'app-header',

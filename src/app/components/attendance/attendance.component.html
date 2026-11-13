@@ -12,7 +12,7 @@
       </div>
       <div>
         <div class="selected-date-badge">
-          <span>التاريخ:</span>
+          <span>اليوم المحدد:</span>
           <strong>{{ formattedSelectedDate() }}</strong>
           @if (isTodaySelected()) {
             <span class="today-tag">اليوم</span>
@@ -21,73 +21,246 @@
       </div>
     </div>
 
+    <!-- Quick Day Selection Actions -->
     <div class="header-actions-group">
-      <button type="button" class="btn btn-outline btn-sm" (click)="goToToday()">
+      <div class="date-quick-btns">
+        <button type="button" class="btn btn-outline btn-sm" [class.btn-active-day]="isTodaySelected()" (click)="goToToday()">
+          اليوم
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="goToYesterday()">
+          أمس
+        </button>
+        <input
+          type="date"
+          class="form-control date-picker-input"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="selectDate($event)" />
+      </div>
+
+      <!-- Add Cover Session Button -->
+      <button type="button" class="btn btn-cover-action" (click)="openCoverModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 14 14"></polyline>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
         </svg>
-        <span>اليوم</span>
+        <span>+ تغطية جلسة زميل (Cover)</span>
       </button>
     </div>
   </div>
 
-  <!-- Specialist Session Calculation Option -->
-  <div class="pricing-toggle-bar">
-    <div class="pricing-toggle-info">
-      <div class="toggle-control-group">
-        <label class="toggle-switch">
-          <input 
-            type="checkbox" 
-            [checked]="isPriceCalculationEnabled()" 
-            (change)="togglePriceCalculation()" />
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="toggle-text" (click)="togglePriceCalculation()">
-          {{ isPriceCalculationEnabled() ? 'حساب أسعار الجلسات' : 'حساب أسعار الجلسات' }}
-        </span>
-      </div>
-
-      @if (isPriceCalculationEnabled()) {
-        <div class="pricing-fields-inline">
-          <div class="date-total-pill">
-            <span class="pill-lbl">إجمالي الجلسات:</span>
-            <strong class="pill-val">{{ totalAttendedSessions() }} جلسة</strong>
-            <span class="pill-sub">(اليوم المحدد: {{ selectedDateAttendedCount() }})</span>
-          </div>
-
-          <div class="price-input-compact">
-            <label for="attSessionPrice" class="compact-label">سعر الجلسة (اختياري):</label>
-            <div class="input-with-tag">
-              <input
-                id="attSessionPrice"
-                type="number"
-                min="0"
-                step="10"
-                class="form-control form-control-sm price-num-input"
-                [ngModel]="sessionPriceInput()"
-                (ngModelChange)="onPriceInputChange($event)"
-                placeholder="اختياري" />
-              <span class="tag-curr">ج.م</span>
-            </div>
-            <button type="button" class="btn btn-primary btn-sm" (click)="updateSessionPrice()">
-              حفظ
-            </button>
-          </div>
-
-          @if (sessionPrice() > 0) {
-            <div class="date-total-pill">
-              <span class="pill-lbl">الإجمالي المالي:</span>
-              <strong class="pill-val">{{ formattedTotalCalculatedAmount() }}</strong>
-            </div>
-          }
-        </div>
-      }
+  <!-- Day Summary Counters -->
+  <div class="day-stats-bar">
+    <div class="stat-pill stat-total">
+      <span class="stat-lbl">إجمالي الجلسات:</span>
+      <strong class="stat-num">{{ selectedDateSessions().length }}</strong>
     </div>
+    <div class="stat-pill stat-attend">
+      <span class="stat-lbl">Attend:</span>
+      <strong class="stat-num">{{ selectedDateAttendedCount() }}</strong>
+    </div>
+    <div class="stat-pill stat-cancel">
+      <span class="stat-lbl">Cancel:</span>
+      <strong class="stat-num">{{ selectedDateCancelledCount() }}</strong>
+    </div>
+    <div class="stat-pill stat-noshow">
+      <span class="stat-lbl">No Show:</span>
+      <strong class="stat-num">{{ selectedDateAbsentCount() }}</strong>
+    </div>
+    @if (selectedDateCoverCount() > 0) {
+      <div class="stat-pill stat-cover">
+        <span class="stat-lbl">جلسات Cover:</span>
+        <strong class="stat-num">{{ selectedDateCoverCount() }}</strong>
+      </div>
+    }
   </div>
 
   <div class="attendance-grid-layout">
-    <!-- Left Column: Interactive Arabic Calendar -->
+    <!-- Right Column (RTL Start): Sessions for the Selected Day -->
+    <div class="attendance-list-section">
+      <div class="section-top-bar">
+        <div>
+          <h3 class="section-title">جلسات اليوم المحدد</h3>
+          <span class="date-summary">{{ formattedSelectedDate() }}</span>
+        </div>
+        <span class="badge badge-primary">
+          {{ selectedDateSessions().length }} جلسات مسجلة
+        </span>
+      </div>
+
+      <!-- 1. Recorded Sessions on this Day -->
+      @if (selectedDateSessions().length > 0) {
+        <div class="recorded-sessions-group">
+          <h4 class="subgroup-title">الجلسات المسجلة لهذا اليوم:</h4>
+          <div class="children-attendance-cards">
+            @for (session of selectedDateSessions(); track session.id) {
+              @let child = getChildInfo(session.childId);
+              <div 
+                class="child-record-card" 
+                [class.attended]="session.status === 'attended'" 
+                [class.cancelled]="session.status === 'cancelled'"
+                [class.absent]="session.status === 'absent'"
+                [class.is-cover-card]="session.isCover">
+                
+                <div class="child-meta">
+                  <div class="child-avatar" [class.avatar-cover]="session.isCover">
+                    {{ child ? child.name.charAt(0) : 'ط' }}
+                  </div>
+                  <div class="child-info">
+                    <div class="child-name-row">
+                      <h4 class="child-name">{{ child ? child.name : getChildName(session.childId) }}</h4>
+                      @if (session.isCover) {
+                        <span class="cover-chip-badge">
+                          Cover (تغطية: {{ session.coveredSpecialistName || 'زميل' }})
+                        </span>
+                      }
+                    </div>
+
+                    @if (child && child.diagnosis) {
+                      <span class="child-diagnosis">{{ child.diagnosis }}</span>
+                    }
+
+                    @if (session.price && session.price > 0) {
+                      <span class="child-price-tag">سعر الجلسة: {{ session.price }} ج.م</span>
+                    }
+
+                    @if (session.notes) {
+                      <span class="session-note-txt">{{ session.notes }}</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Status Buttons & Clear Action -->
+                <div class="attendance-action-panel">
+                  <div class="status-indicator-box">
+                    @if (session.status === 'attended') {
+                      <span class="status-indicator status-present">Attend ✓</span>
+                    } @else if (session.status === 'cancelled') {
+                      <span class="status-indicator status-cancelled">Cancel</span>
+                    } @else {
+                      <span class="status-indicator status-absent">No Show ✕</span>
+                    }
+
+                    <button 
+                      type="button" 
+                      class="btn-delete-session" 
+                      (click)="deleteSession(session.id)" 
+                      title="حذف الجلسة وإلغاء تسجيلها">
+                      إلغاء ✕
+                    </button>
+                  </div>
+
+                  <div class="buttons-cluster">
+                    <button
+                      type="button"
+                      class="action-btn btn-present"
+                      [class.active]="session.status === 'attended'"
+                      (click)="child ? markAttendance(child, 'attended') : null"
+                      title="Attend (الضغط مجدداً يلغي التسجيل)">
+                      <span>Attend</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-btn btn-cancel-btn"
+                      [class.active]="session.status === 'cancelled'"
+                      (click)="child ? markAttendance(child, 'cancelled') : null"
+                      title="Cancel (الضغط مجدداً يلغي التسجيل)">
+                      <span>Cancel</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-btn btn-absent"
+                      [class.active]="session.status === 'absent'"
+                      (click)="child ? markAttendance(child, 'absent') : null"
+                      title="No Show (الضغط مجدداً يلغي التسجيل)">
+                      <span>No Show</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 2. Children scheduled or owned not yet recorded for this day -->
+      <div class="unrecorded-children-group">
+        <h4 class="subgroup-title">تسجيل جلسة لطفل من قائمتك لهذا اليوم:</h4>
+        @if (myChildren().length === 0) {
+          <div class="empty-state">
+            <p>لا يوجد أطفال في قائمتك.</p>
+          </div>
+        } @else {
+          <div class="children-attendance-cards">
+            @for (child of myChildren(); track child.id) {
+              @let status = getChildStatusOnSelectedDate(child.id);
+              @if (status === 'unrecorded') {
+                <div class="child-record-card unrecorded-card">
+                  <div class="child-meta">
+                    <div class="child-avatar">
+                      {{ child.name.charAt(0) }}
+                    </div>
+                    <div class="child-info">
+                      <div class="child-name-row">
+                        <h4 class="child-name">{{ child.name }}</h4>
+                        @if (child.age > 0) {
+                          <span class="child-age">({{ child.age }} سنوات)</span>
+                        }
+                      </div>
+                      @if (child.diagnosis) {
+                        <span class="child-diagnosis">{{ child.diagnosis }}</span>
+                      }
+                      @if (child.scheduleDays && child.scheduleDays.length > 0) {
+                        <div class="card-schedule-days">
+                          <span class="days-lbl">أيام الحضور:</span>
+                          @for (d of child.scheduleDays; track d) {
+                            <span class="mini-day-chip">{{ d }}</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="attendance-action-panel">
+                    <span class="status-indicator status-pending">لم يُسجل</span>
+                    <div class="buttons-cluster">
+                      <button
+                        type="button"
+                        class="action-btn btn-present"
+                        (click)="markAttendance(child, 'attended')"
+                        title="تسجيل Attend">
+                        <span>Attend</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-btn btn-cancel-btn"
+                        (click)="markAttendance(child, 'cancelled')"
+                        title="تسجيل Cancel">
+                        <span>Cancel</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-btn btn-absent"
+                        (click)="markAttendance(child, 'absent')"
+                        title="تسجيل No Show">
+                        <span>No Show</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Left Column (Calendar for quick day-switching) -->
     <div class="calendar-card">
       <div class="calendar-header">
         <h3 class="calendar-title">
@@ -118,7 +291,7 @@
         <span class="weekday">سبت</span>
       </div>
 
-      <!-- Days cells -->
+      <!-- Days matrix -->
       <div class="days-matrix">
         @for (day of calendarDays(); track day.dateStr) {
           <button
@@ -131,10 +304,16 @@
             <span class="day-number">{{ day.dayNumber }}</span>
             <div class="dots-row">
               @if (day.attendedCount > 0) {
-                <span class="dot dot-attended" [title]="day.attendedCount + ' جلسات حضور'"></span>
+                <span class="dot dot-attended" [title]="day.attendedCount + ' Attend'"></span>
+              }
+              @if (day.cancelledCount > 0) {
+                <span class="dot dot-cancelled" [title]="day.cancelledCount + ' Cancel'"></span>
               }
               @if (day.absentCount > 0) {
-                <span class="dot dot-absent" [title]="day.absentCount + ' غياب'"></span>
+                <span class="dot dot-absent" [title]="day.absentCount + ' No Show'"></span>
+              }
+              @if (day.coverCount > 0) {
+                <span class="dot dot-cover" [title]="day.coverCount + ' Cover'"></span>
               }
             </div>
           </button>
@@ -142,107 +321,104 @@
       </div>
 
       <div class="calendar-legend">
-        <span class="legend-item"><span class="dot dot-attended"></span> حضر</span>
-        <span class="legend-item"><span class="dot dot-absent"></span> غياب</span>
-        <span class="legend-item"><span class="legend-ring"></span> اليوم الحالي</span>
+        <span class="legend-item"><span class="dot dot-attended"></span> Attend</span>
+        <span class="legend-item"><span class="dot dot-cancelled"></span> Cancel</span>
+        <span class="legend-item"><span class="dot dot-absent"></span> No Show</span>
+        <span class="legend-item"><span class="dot dot-cover"></span> Cover</span>
       </div>
-    </div>
-
-    <!-- Right Column: Children Attendance Checklist for Selected Date -->
-    <div class="attendance-list-section">
-      <div class="section-top-bar">
-        <div>
-          <h3 class="section-title">تسجيل الحضور</h3>
-          <span class="date-summary">{{ selectedDate() }}</span>
-        </div>
-        <span class="badge badge-primary">
-          {{ availableChildren().length }} أطفال
-        </span>
-      </div>
-
-      @if (availableChildren().length === 0) {
-        <div class="empty-state">
-          <p>لا يوجد أطفال مسجلون.</p>
-        </div>
-      } @else {
-        <div class="children-attendance-cards">
-          @for (child of availableChildren(); track child.id) {
-            @let status = getChildStatusOnSelectedDate(child.id);
-            <div class="child-record-card" [class.attended]="status === 'attended'" [class.absent]="status === 'absent'">
-              <div class="child-meta">
-                <div class="child-avatar">
-                  {{ child.name.charAt(0) }}
-                </div>
-                <div class="child-info">
-                  <div class="child-name-row">
-                    <h4 class="child-name">{{ child.name }}</h4>
-                    @if (child.age > 0) {
-                      <span class="child-age">({{ child.age }} سنوات)</span>
-                    }
-                  </div>
-                  @if (child.diagnosis) {
-                    <span class="child-diagnosis">{{ child.diagnosis }}</span>
-                  }
-                  @if (child.guardianName) {
-                    <span class="child-guardian">ولي الأمر: {{ child.guardianName }}</span>
-                  }
-                </div>
-              </div>
-
-              <!-- Status Badge & Action Buttons (Strictly Attended or Absent) -->
-              <div class="attendance-action-panel">
-                <div class="current-status-tag">
-                  @if (status === 'attended') {
-                    <span class="status-indicator status-present">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                      حضر الجلسة
-                    </span>
-                  } @else if (status === 'absent') {
-                    <span class="status-indicator status-absent">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                      غائب
-                    </span>
-                  } @else {
-                    <span class="status-indicator status-pending">لم يُسجل بعد</span>
-                  }
-                </div>
-
-                <div class="buttons-cluster">
-                  <button
-                    type="button"
-                    class="action-btn btn-present"
-                    [class.active]="status === 'attended'"
-                    (click)="markAttendance(child, 'attended')"
-                    title="تسجيل حضور">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>حضور</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="action-btn btn-absent"
-                    [class.active]="status === 'absent'"
-                    (click)="markAttendance(child, 'absent')"
-                    title="تسجيل غياب">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    <span>غياب</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
-      }
     </div>
   </div>
+
+  <!-- Cover Session Modal -->
+  @if (showCoverModal()) {
+    <div class="modal-overlay" (click)="closeCoverModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="cover-header-title">
+            <span class="cover-tag">تغطية Cover</span>
+            <h3 class="modal-title">تسجيل جلسة تغطية لزميل</h3>
+          </div>
+          <button type="button" class="close-modal-btn" (click)="closeCoverModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="saveCoverSession()" class="modal-form">
+          <div class="form-group">
+            <label class="form-label">الطفل *</label>
+            <select
+              class="form-control"
+              [ngModel]="coverChildId()"
+              (ngModelChange)="onCoverChildSelect($event)"
+              name="coverChild"
+              required>
+              <option value="">-- اختر الطفل --</option>
+              @for (c of allChildren(); track c.id) {
+                <option [value]="c.id">
+                  {{ c.name }} {{ c.diagnosis ? '(' + c.diagnosis + ')' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">اسم الزميل الغائب (الذي تمت تغطية جلسته)</label>
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="coverColleagueName()"
+              (ngModelChange)="coverColleagueName.set($event)"
+              name="colleagueName"
+              placeholder="اسم الزميل" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">حالة الجلسة</label>
+            <div class="cover-status-options">
+              <label class="status-radio-pill" [class.selected]="coverStatus() === 'attended'">
+                <input type="radio" name="coverStatus" value="attended" [ngModel]="coverStatus()" (ngModelChange)="coverStatus.set($event)" />
+                <span>Attend (تمت الجلسة)</span>
+              </label>
+              <label class="status-radio-pill" [class.selected]="coverStatus() === 'cancelled'">
+                <input type="radio" name="coverStatus" value="cancelled" [ngModel]="coverStatus()" (ngModelChange)="coverStatus.set($event)" />
+                <span>Cancel (اعتذار)</span>
+              </label>
+              <label class="status-radio-pill" [class.selected]="coverStatus() === 'absent'">
+                <input type="radio" name="coverStatus" value="absent" [ngModel]="coverStatus()" (ngModelChange)="coverStatus.set($event)" />
+                <span>No Show (لم يحضر)</span>
+              </label>
+            </div>
+          </div>
+
+          @if (isPriceCalculationEnabled()) {
+            <div class="form-group">
+              <label class="form-label">سعر جلسة التغطية (ج.م)</label>
+              <input
+                type="number"
+                min="0"
+                class="form-control"
+                [ngModel]="coverPrice()"
+                (ngModelChange)="coverPrice.set($event)"
+                name="coverPrice"
+                placeholder="السعر المستحق لك" />
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label">ملاحظات التغطية</label>
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="coverNotes()"
+              (ngModelChange)="coverNotes.set($event)"
+              name="coverNotes"
+              placeholder="مثال: تغطية جلسة تخاطب لغياب الزميل" />
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeCoverModal()">إلغاء</button>
+            <button type="submit" class="btn btn-primary">حفظ جلسة التغطية</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </div>
