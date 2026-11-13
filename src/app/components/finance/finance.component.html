@@ -1,0 +1,225 @@
+<div class="finance-page">
+  <!-- Option Toggle Card -->
+  <div class="finance-header-card">
+    <div class="toggle-info-row">
+      <div class="info-meta">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="card-title">حساب إجمالي الجلسات</h2>
+        </div>
+      </div>
+
+      <!-- Toggle Switch Button -->
+      <div class="switch-container">
+        <label class="toggle-switch">
+          <input 
+            type="checkbox" 
+            [checked]="isEnabled()" 
+            (change)="toggleCalculation()" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label" (click)="toggleCalculation()">
+          {{ isEnabled() ? 'مُفعل' : 'تفعيل' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- If Enabled: Show Optional Session Price Input Field -->
+    @if (isEnabled()) {
+      <div class="pricing-input-panel">
+        <div class="price-input-group">
+          <label for="sessionPrice" class="input-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            سعر الجلسة الواحدة (اختياري):
+          </label>
+          <div class="input-with-button">
+            <div class="input-wrapper">
+              <input
+                id="sessionPrice"
+                type="number"
+                min="0"
+                step="10"
+                class="form-control price-field"
+                [ngModel]="sessionPriceInput()"
+                (ngModelChange)="onPriceChange($event)"
+                placeholder="اتركه فارغاً أو أدخل السعر" />
+              <span class="currency-tag">ج.م</span>
+            </div>
+            <button type="button" class="btn btn-primary btn-save" (click)="updateSessionPrice()">
+              حفظ
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (isEnabled()) {
+    <!-- KPI Cards -->
+    <div class="financial-stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrap icon-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="stat-text">
+          <span class="stat-label">إجمالي الجلسات المنجزة</span>
+          <span class="stat-value">{{ totalAttendedCount() }}</span>
+          <span class="stat-sub">جلسة حضور</span>
+        </div>
+      </div>
+
+      @if (sessionPrice() > 0) {
+        <div class="stat-card">
+          <div class="stat-icon-wrap icon-accent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+              <line x1="12" y1="18" x2="12" y2="20"></line>
+              <line x1="12" y1="4" x2="12" y2="6"></line>
+            </svg>
+          </div>
+          <div class="stat-text">
+            <span class="stat-label">سعر الجلسة</span>
+            <span class="stat-value">{{ sessionPrice() }} ج.م</span>
+            <span class="stat-sub">سعر الجلسة الواحدة</span>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-highlight">
+          <div class="stat-icon-wrap icon-gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="stat-text">
+            <span class="stat-label">إجمالي الحساب</span>
+            <span class="stat-value highlight-amount">{{ formattedTotalEarnings() }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Children Breakdown -->
+    <div class="breakdown-card">
+      <div class="breakdown-header">
+        <h3 class="breakdown-title">تفصيل جلسات كل طفل</h3>
+        <span class="badge badge-primary">{{ childrenFinancialList().length }} أطفال</span>
+      </div>
+
+      @if (childrenFinancialList().length === 0) {
+        <p class="text-muted text-center py-4">لا يوجد أطفال مسجلون حالياً.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="zowad-table">
+            <thead>
+              <tr>
+                <th>اسم الطفل</th>
+                <th>الحالة</th>
+                <th>عدد جلسات الحضور</th>
+                @if (sessionPrice() > 0) {
+                  <th>سعر الجلسة</th>
+                  <th>إجمالي الحساب</th>
+                }
+                <th>آخر جلسة</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of childrenFinancialList(); track item.id) {
+                <tr>
+                  <td class="font-bold">{{ item.name }}</td>
+                  <td>
+                    @if (item.diagnosis) {
+                      <span class="diagnosis-pill">{{ item.diagnosis }}</span>
+                    } @else {
+                      <span class="text-muted">-</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge badge-success">{{ item.sessionsCount }} جلسات</span>
+                  </td>
+                  @if (sessionPrice() > 0) {
+                    <td>{{ sessionPrice() }} ج.م</td>
+                    <td class="amount-cell">{{ item.totalAmount.toLocaleString('ar-EG') }} ج.م</td>
+                  }
+                  <td class="text-muted">{{ item.lastSessionDate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- Specialists Summary -->
+    <div class="breakdown-card">
+      <div class="breakdown-header">
+        <h3 class="breakdown-title">إجمالي جلسات الأخصائيين</h3>
+        <span class="badge badge-primary">{{ specialistsFinancialList().length }} أخصائيين</span>
+      </div>
+
+      @if (specialistsFinancialList().length === 0) {
+        <p class="text-muted text-center py-4">لا يوجد أخصائيون مسجلون حالياً.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="zowad-table">
+            <thead>
+              <tr>
+                <th>اسم الأخصائي</th>
+                <th>التخصص</th>
+                <th>الجلسات المنفذة</th>
+                @if (sessionPrice() > 0) {
+                  <th>إجمالي الحساب</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (spec of specialistsFinancialList(); track spec.id) {
+                <tr>
+                  <td class="font-bold">{{ spec.name }}</td>
+                  <td>{{ spec.specialty || '-' }}</td>
+                  <td>
+                    <span class="badge badge-primary">{{ spec.sessionsCount }} جلسات</span>
+                  </td>
+                  @if (sessionPrice() > 0) {
+                    <td class="amount-cell">{{ spec.totalAmount.toLocaleString('ar-EG') }} ج.م</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Disabled State Card -->
+    <div class="disabled-state-card">
+      <div class="disabled-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+      </div>
+      <h3 class="disabled-title">حساب الجلسات غير مفعّل</h3>
+      <button type="button" class="btn btn-primary btn-lg" (click)="toggleCalculation()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>تفعيل</span>
+      </button>
+    </div>
+  }
+</div>

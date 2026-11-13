@@ -1,0 +1,149 @@
+.app-footer {
+  width: 100%;
+  margin-top: 4rem;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 2.5rem 1rem 1.5rem;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.footer-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-primary);
+}
+
+.brand-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
+}
+
+/* Developer Attribution - Clean, no background, no border */
+.developer-attribution {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100%;
+}
+
+.attribution-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary);
+
+    .attribution-text {
+      color: var(--color-primary);
+    }
+
+    .developer-logo {
+      transform: scale(1.08);
+    }
+  }
+}
+
+.attribution-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: color var(--transition-fast);
+}
+
+.developer-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  transition: transform var(--transition-fast);
+}
+
+/* Phone Number - Under Logo & Ready to Copy */
+.phone-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.phone-copy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary);
+    background-color: var(--bg-primary-soft);
+    border-color: var(--border-primary);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.phone-digits {
+  letter-spacing: 0.5px;
+  direction: ltr;
+}
+
+.copy-svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.copied-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.footer-bottom {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,34 @@
+<div class="app-shell">
+  <!-- Toast Notifications (Fixed overlay) -->
+  <app-toast></app-toast>
+
+  <!-- Application Header -->
+  <app-header
+    [currentTab]="currentTab()"
+    (tabChange)="setTab($event)"
+    (openAuthModal)="openAuthModal()">
+  </app-header>
+
+  <!-- Main View Area -->
+  <main class="main-content container">
+    @switch (currentTab()) {
+      @case ('children') {
+        <app-children></app-children>
+      }
+      @case ('dashboard') {
+        <app-dashboard></app-dashboard>
+      }
+      @case ('admin-specialists') {
+        <app-admin-specialists></app-admin-specialists>
+      }
+    }
+  </main>
+
+  <!-- Global Footer with Developer Attribution & Logo -->
+  <app-footer></app-footer>
+
+  <!-- Auth Dialog (Only when requested) -->
+  @if (isAuthModalOpen()) {
+    <app-auth-modal (closeModal)="closeAuthModal()"></app-auth-modal>
+  }
+</div>

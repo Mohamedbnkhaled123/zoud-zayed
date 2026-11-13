@@ -1,0 +1,419 @@
+<div class="children-page">
+  <!-- Top Bar: Add Child + Session Price Calculation Option -->
+  <div class="top-controls-bar">
+      <div class="primary-actions-group">
+        <!-- Add Child Button -->
+        <button type="button" class="btn btn-primary btn-add" (click)="openAddModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mini-icon">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>إضافة طفل</span>
+        </button>
+
+        <!-- Session Price Option -->
+        <div class="pricing-option-bar">
+          <label class="toggle-pill-label">
+            <input
+              type="checkbox"
+              [checked]="isPriceCalculationEnabled()"
+              (change)="togglePriceCalculation()" />
+            <span class="custom-switch-indicator"></span>
+            <span class="switch-title">
+              حساب أسعار الجلسات
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Search & Filter (Only when children exist) -->
+      @if (myChildren().length > 0) {
+        <div class="search-and-filter">
+          <div class="search-input-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="بحث..."
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)" />
+          </div>
+
+          @if (availableDiagnoses().length > 0) {
+            <div class="filter-box">
+              <select
+                class="form-control select-input"
+                [ngModel]="selectedDiagnosisFilter()"
+                (ngModelChange)="selectedDiagnosisFilter.set($event)">
+                <option value="all">جميع الحالات</option>
+                @for (d of availableDiagnoses(); track d) {
+                  <option [value]="d">{{ d }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Children Status Summary -->
+    @if (myChildren().length > 0) {
+      <div class="results-header">
+        <span class="count-text">
+          <strong>{{ filteredChildren().length }}</strong> أطفال
+        </span>
+      </div>
+    }
+
+    <!-- Empty State (Clean & Minimal) -->
+    @if (filteredChildren().length === 0) {
+      <div class="empty-state-simple">
+        <h3 class="empty-title">لا يوجد أطفال مسجلون</h3>
+      </div>
+    } @else {
+      <!-- Children Grid Cards -->
+      <div class="children-grid">
+        @for (child of filteredChildren(); track child.id) {
+          @let sessions = getChildSessions(child.id);
+          @let attendedCount = sessions.length;
+          <div class="child-card">
+            <div class="child-card-header">
+              <div class="child-avatar">
+                {{ child.name.charAt(0) }}
+              </div>
+              <div class="child-header-text">
+                <h3 class="child-card-title">{{ child.name }}</h3>
+                @if (child.age > 0) {
+                  <span class="child-card-age">{{ child.age }} سنوات</span>
+                }
+              </div>
+            </div>
+
+            <div class="child-card-body">
+              @if (child.diagnosis) {
+                <div class="diagnosis-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tag-svg">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ child.diagnosis }}</span>
+                </div>
+              }
+
+              @if (child.guardianName) {
+                <div class="meta-row">
+                  <span class="meta-label">ولي الأمر:</span>
+                  <span class="meta-val">{{ child.guardianName }}</span>
+                </div>
+              }
+
+              @if (child.guardianPhone) {
+                <div class="meta-row">
+                  <span class="meta-label">هاتف التواصل:</span>
+                  <a [href]="'tel:' + child.guardianPhone" class="meta-val phone-link" dir="ltr">
+                    {{ child.guardianPhone }}
+                  </a>
+                </div>
+              }
+
+              <div class="meta-row">
+                <span class="meta-label">الأخصائي:</span>
+                <span class="meta-val spec-name">{{ getSpecialistName(child.specialistId) }}</span>
+              </div>
+
+              <div class="sessions-counter-box">
+                <span class="counter-text">الجلسات:</span>
+                <span class="counter-badge">{{ attendedCount }}</span>
+              </div>
+
+              <!-- Session Price field directly on Child Card -->
+              @if (isPriceCalculationEnabled()) {
+                <div class="child-pricing-box">
+                  <div class="child-pricing-row">
+                    <label [for]="'price-' + child.id" class="child-price-label">سعر الجلسة:</label>
+                    <div class="input-with-tag-sm">
+                      <input
+                        [id]="'price-' + child.id"
+                        type="number"
+                        min="0"
+                        step="10"
+                        class="form-control form-control-sm child-price-input"
+                        [ngModel]="child.sessionPrice || null"
+                        (ngModelChange)="updateChildPrice(child, $event)"
+                        placeholder="السعر" />
+                      <span class="curr-sm">ج.م</span>
+                    </div>
+                  </div>
+
+                  @let effPrice = getChildEffectivePrice(child);
+                  @if (effPrice > 0) {
+                    <div class="child-earnings-row">
+                      <span class="earnings-label">المستحق ({{ attendedCount }}):</span>
+                      <strong class="earnings-val">{{ (attendedCount * effPrice).toLocaleString('ar-EG') }} ج.م</strong>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Quick Today Attendance Selector -->
+              <div class="child-today-panel">
+                <div class="today-panel-header">
+                  <span class="panel-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-svg">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 14 14"></polyline>
+                    </svg>
+                    حضور اليوم:
+                  </span>
+                  @let status = getTodayStatus(child.id);
+                  @if (status === 'attended') {
+                    <span class="status-pill status-pill-success">حاضر</span>
+                  } @else if (status === 'absent') {
+                    <span class="status-pill status-pill-danger">غائب</span>
+                  } @else {
+                    <span class="status-pill status-pill-muted">-</span>
+                  }
+                </div>
+
+                <div class="today-action-btns">
+                  @let curStatus = getTodayStatus(child.id);
+                  <button
+                    type="button"
+                    class="btn-attend btn-attend-present"
+                    [class.active]="curStatus === 'attended'"
+                    (click)="markTodayAttendance(child, 'attended')"
+                    title="حضور">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>حضر</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-attend btn-attend-absent"
+                    [class.active]="curStatus === 'absent'"
+                    (click)="markTodayAttendance(child, 'absent')"
+                    title="غياب">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    <span>غياب</span>
+                  </button>
+                </div>
+              </div>
+
+              @if (child.notes) {
+                <div class="notes-box">
+                  <span class="notes-label">ملاحظات:</span>
+                  <p class="notes-text">{{ child.notes }}</p>
+                </div>
+              }
+            </div>
+
+            <div class="child-card-footer">
+              <button type="button" class="btn btn-outline btn-sm btn-icon" (click)="openHistory(child)" title="سجل الجلسات">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>سجل الجلسات</span>
+              </button>
+
+              <div class="action-buttons-group">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="openEditModal(child)" title="تعديل">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+
+                <button type="button" class="btn btn-secondary btn-sm text-danger" (click)="deleteChild(child)" title="حذف">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  <!-- Add / Edit Child Modal -->
+  @if (showChildModal()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ isEditing() ? 'تعديل بيانات الطفل' : 'إضافة طفل' }}</h3>
+          <button type="button" class="close-modal-btn" (click)="closeModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="saveChild()" class="modal-form">
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label class="form-label">اسم الطفل *</label>
+              <input
+                type="text"
+                class="form-control"
+                [ngModel]="childName()"
+                (ngModelChange)="childName.set($event)"
+                name="name"
+                required
+                placeholder="الاسم" />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">العمر</label>
+              <input
+                type="number"
+                min="1"
+                max="18"
+                class="form-control"
+                [ngModel]="childAge()"
+                (ngModelChange)="childAge.set($event)"
+                name="age"
+                placeholder="العمر" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">التشخيص</label>
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="childDiagnosis()"
+              (ngModelChange)="childDiagnosis.set($event)"
+              name="diagnosis"
+              placeholder="التشخيص" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">ولي الأمر</label>
+              <input
+                type="text"
+                class="form-control"
+                [ngModel]="guardianName()"
+                (ngModelChange)="guardianName.set($event)"
+                name="guardianName"
+                placeholder="ولي الأمر" />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">رقم الهاتف</label>
+              <input
+                type="tel"
+                class="form-control"
+                [ngModel]="guardianPhone()"
+                (ngModelChange)="guardianPhone.set($event)"
+                name="guardianPhone"
+                dir="ltr"
+                placeholder="الهاتف" />
+            </div>
+          </div>
+
+          @if (isPriceCalculationEnabled()) {
+            <div class="form-group">
+              <label class="form-label">سعر الجلسة (ج.م)</label>
+              <input
+                type="number"
+                min="0"
+                class="form-control"
+                [ngModel]="childSessionPrice()"
+                (ngModelChange)="childSessionPrice.set($event)"
+                name="sessionPrice"
+                placeholder="السعر" />
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label">ملاحظات</label>
+            <textarea
+              class="form-control textarea"
+              rows="3"
+              [ngModel]="childNotes()"
+              (ngModelChange)="childNotes.set($event)"
+              name="notes"
+              placeholder="ملاحظات..."></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">إلغاء</button>
+            <button type="submit" class="btn btn-primary">
+              {{ isEditing() ? 'حفظ' : 'إضافة' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- View History Modal -->
+  @if (selectedChildForHistory(); as child) {
+    <div class="modal-overlay" (click)="closeHistory()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">سجل الجلسات: {{ child.name }}</h3>
+            @if (child.diagnosis || child.age > 0) {
+              <span class="sub-diag">
+                {{ child.diagnosis }}
+                @if (child.age > 0) {
+                  <span>| {{ child.age }} سنوات</span>
+                }
+              </span>
+            }
+          </div>
+          <button type="button" class="close-modal-btn" (click)="closeHistory()">&times;</button>
+        </div>
+
+        <div class="modal-body-content">
+          @let sessions = getChildSessions(child.id);
+          @if (sessions.length === 0) {
+            <p class="text-center text-muted py-4">لا توجد جلسات مسجلة.</p>
+          } @else {
+            <div class="table-responsive">
+              <table class="zowad-table">
+                <thead>
+                  <tr>
+                    <th>تاريخ الجلسة</th>
+                    <th>حالة الحضور</th>
+                    <th>سعر الجلسة</th>
+                    <th>ملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of sessions; track s.id) {
+                    <tr>
+                      <td class="font-bold">{{ formatDate(s.date) }}</td>
+                      <td>
+                        @if (s.status === 'attended') {
+                          <span class="badge badge-success">حضور</span>
+                        } @else {
+                          <span class="badge badge-danger">غياب</span>
+                        }
+                      </td>
+                      <td>{{ s.price ? s.price + ' ج.م' : '-' }}</td>
+                      <td>{{ s.notes || '-' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" (click)="closeHistory()">إغلاق</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,278 @@
+<div class="dashboard-page">
+  <!-- Welcome Banner -->
+  <div class="welcome-banner">
+    <div class="banner-text">
+      <h2 class="welcome-title">لوحة التحليل</h2>
+      <p class="welcome-subtitle">{{ formattedToday }}</p>
+    </div>
+  </div>
+
+  <!-- Summary KPI Cards -->
+  <div class="kpi-grid">
+    <!-- 1. Total Children -->
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-blue-subtle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">إجمالي الأطفال</span>
+        <span class="kpi-value">{{ totalChildren() }}</span>
+      </div>
+    </div>
+
+    <!-- 2. Today's Sessions -->
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-green-subtle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 14 14"></polyline>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">جلسات اليوم</span>
+        <span class="kpi-value">{{ todaySessions().length }}</span>
+      </div>
+    </div>
+
+    <!-- 3. Attendance Rate -->
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-indigo-subtle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">جلسات الحضور</span>
+        <span class="kpi-value">{{ totalAttendedSessions() }}</span>
+        <span class="kpi-sub">{{ attendanceRate() }}%</span>
+      </div>
+    </div>
+
+    <!-- 4. Session Accounts -->
+    <div class="kpi-card highlight-kpi">
+      <div class="kpi-icon-box bg-gold-subtle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">حسابات الجلسات</span>
+        @if (isPriceCalculationEnabled()) {
+          @if (sessionPrice() > 0) {
+            <span class="kpi-value text-primary-strong">{{ formattedEarnings() }}</span>
+          } @else {
+            <span class="kpi-value text-primary-strong">{{ totalAttendedSessions() }} جلسة</span>
+          }
+        } @else {
+          <span class="kpi-value text-muted">-</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- On-Demand Controls -->
+  <div class="on-demand-panel">
+    <div class="demand-buttons-grid">
+      <!-- 1. Toggle Attendance & Calendar -->
+      <button 
+        type="button" 
+        class="demand-btn" 
+        [class.active]="showAttendanceCalendar()" 
+        (click)="toggleAttendanceCalendar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span>{{ showAttendanceCalendar() ? 'إخفاء التقويم' : 'التقويم والحضور' }}</span>
+      </button>
+
+      <!-- 2. Toggle Financial Accounts -->
+      <button 
+        type="button" 
+        class="demand-btn" 
+        [class.active]="showFinanceAccounts()" 
+        (click)="toggleFinanceAccounts()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <span>{{ showFinanceAccounts() ? 'إخفاء الحسابات' : 'حساب الجلسات' }}</span>
+      </button>
+
+      <!-- 3. Toggle Children Analysis -->
+      <button 
+        type="button" 
+        class="demand-btn" 
+        [class.active]="showChildrenAnalysis()" 
+        (click)="toggleChildrenAnalysis()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span>{{ showChildrenAnalysis() ? 'إخفاء جدول الأطفال' : 'تحليل الأطفال' }}</span>
+      </button>
+
+      <!-- 4. Toggle Specialists Accounts Analysis -->
+      <button 
+        type="button" 
+        class="demand-btn" 
+        [class.active]="showSpecialistsAnalysis()" 
+        (click)="toggleSpecialistsAnalysis()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+        <span>{{ showSpecialistsAnalysis() ? 'إخفاء جدول الأخصائيين' : 'تحليل الأخصائيين' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- On-Demand Section 1: Attendance & Calendar -->
+  @if (showAttendanceCalendar()) {
+    <div class="requested-section-box">
+      <div class="section-close-bar">
+        <h4>التقويم والحضور</h4>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="toggleAttendanceCalendar()">إغلاق</button>
+      </div>
+      <app-attendance></app-attendance>
+    </div>
+  }
+
+  <!-- On-Demand Section 2: Session Accounts & Finance -->
+  @if (showFinanceAccounts()) {
+    <div class="requested-section-box">
+      <div class="section-close-bar">
+        <h4>حساب الجلسات</h4>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="toggleFinanceAccounts()">إغلاق</button>
+      </div>
+      <app-finance></app-finance>
+    </div>
+  }
+
+  <!-- On-Demand Section 3: Children Analysis Table -->
+  @if (showChildrenAnalysis()) {
+    <div class="requested-section-box">
+      <div class="section-close-bar">
+        <h4>تحليل الأطفال</h4>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="toggleChildrenAnalysis()">إغلاق</button>
+      </div>
+
+      @if (allChildrenAnalytics().length === 0) {
+        <p class="text-muted text-center py-4">لا يوجد أطفال مسجلون حالياً.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="zowad-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم الطفل</th>
+                <th>العمر</th>
+                <th>الحالة</th>
+                <th>الأخصائي</th>
+                <th>جلسات الحضور</th>
+                <th>غياب</th>
+                <th>حالة اليوم ({{ todayStr }})</th>
+                @if (isPriceCalculationEnabled() && sessionPrice() > 0) {
+                  <th>إجمالي الحساب</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of allChildrenAnalytics(); track c.id; let idx = $index) {
+                <tr>
+                  <td class="text-center font-bold">{{ idx + 1 }}</td>
+                  <td class="font-bold">{{ c.name }}</td>
+                  <td>{{ c.age > 0 ? c.age + ' سنوات' : '-' }}</td>
+                  <td>
+                    @if (c.diagnosis) {
+                      <span class="diagnosis-pill">{{ c.diagnosis }}</span>
+                    } @else {
+                      <span class="text-muted">-</span>
+                    }
+                  </td>
+                  <td>{{ c.specialistName }}</td>
+                  <td>
+                    <span class="badge badge-primary">{{ c.attendedCount }} جلسات</span>
+                  </td>
+                  <td>{{ c.absentCount }}</td>
+                  <td>
+                    @if (c.todayStatus === 'attended') {
+                      <span class="badge badge-success">حضور</span>
+                    } @else if (c.todayStatus === 'absent') {
+                      <span class="badge badge-danger">غائب</span>
+                    } @else {
+                      <span class="badge badge-secondary">-</span>
+                    }
+                  </td>
+                  @if (isPriceCalculationEnabled() && sessionPrice() > 0) {
+                    <td class="font-bold amount-cell">{{ c.totalCost.toLocaleString('ar-EG') }} ج.م</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- On-Demand Section 4: Specialists Analysis Table -->
+  @if (showSpecialistsAnalysis()) {
+    <div class="requested-section-box">
+      <div class="section-close-bar">
+        <h4>تحليل الأخصائيين</h4>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="toggleSpecialistsAnalysis()">إغلاق</button>
+      </div>
+
+      @if (allSpecialistsAnalytics().length === 0) {
+        <p class="text-muted text-center py-4">لا يوجد أخصائيون مسجلون.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="zowad-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم الأخصائي</th>
+                <th>التخصص</th>
+                <th>الأطفال المسندين</th>
+                <th>الجلسات المنفذة</th>
+                @if (isPriceCalculationEnabled() && sessionPrice() > 0) {
+                  <th>إجمالي الحساب</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of allSpecialistsAnalytics(); track s.id; let idx = $index) {
+                <tr>
+                  <td class="text-center font-bold">{{ idx + 1 }}</td>
+                  <td class="font-bold">{{ s.name }}</td>
+                  <td>{{ s.specialty || '-' }}</td>
+                  <td>{{ s.childrenCount }} أطفال</td>
+                  <td>
+                    <span class="badge badge-success">{{ s.attendedSessionsCount }} جلسات</span>
+                  </td>
+                  @if (isPriceCalculationEnabled() && sessionPrice() > 0) {
+                    <td class="font-bold amount-cell">{{ s.totalEarnings.toLocaleString('ar-EG') }} ج.م</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

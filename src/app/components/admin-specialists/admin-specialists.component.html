@@ -1,0 +1,184 @@
+<div class="admin-page">
+  @if (!authService.isAdmin()) {
+    <div class="admin-header-card">
+      <div class="admin-meta">
+        <div>
+          <h2 class="admin-title">صلاحية مقيدة</h2>
+          <p class="admin-desc">إضافة وإدارة الأخصائيين متاحة فقط لمدير المنظومة ({{ adminName }}).</p>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Admin Header Card -->
+    <div class="admin-header-card">
+      <div class="admin-meta">
+        <div class="admin-badge-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="admin-name-row">
+            <h2 class="admin-title">الأخصائيون</h2>
+            <span class="admin-badge">{{ adminName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button type="button" class="btn btn-primary" (click)="openAddModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mini-icon">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>إضافة أخصائي</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Specialists List -->
+    <div class="section-meta-row">
+      <h3 class="section-title">الأخصائيون ({{ dataService.specialists().length }})</h3>
+    </div>
+
+    @if (dataService.specialists().length === 0) {
+      <div class="admin-header-card">
+        <p class="admin-desc">لا يوجد أخصائيون مسجلون.</p>
+      </div>
+    } @else {
+      <div class="specialists-grid">
+        @for (spec of dataService.specialists(); track spec.id) {
+          <div class="specialist-card">
+            <div class="spec-top">
+              <div class="spec-avatar">
+                {{ spec.name.charAt(0) }}
+              </div>
+              <div class="spec-info">
+                <h4 class="spec-name">{{ spec.name }}</h4>
+                @if (spec.specialty) {
+                  <span class="spec-specialty">{{ spec.specialty }}</span>
+                }
+                @if (spec.phone) {
+                  <span class="spec-phone" dir="ltr">{{ spec.phone }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="spec-status-box">
+              <span class="status-title">الحساب:</span>
+              @if (spec.isPasswordSet) {
+                <span class="status-chip chip-success">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  مفعّل
+                </span>
+              } @else {
+                <span class="status-chip chip-pending">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  بانتظار تعيين كلمة المرور
+                </span>
+              }
+            </div>
+
+            <div class="spec-metrics-row">
+              <div class="metric-col">
+                <span class="metric-val">{{ getSpecialistChildrenCount(spec.id) }}</span>
+                <span class="metric-lbl">أطفال</span>
+              </div>
+              <div class="metric-col">
+                <span class="metric-val">{{ getSpecialistSessionsCount(spec.id) }}</span>
+                <span class="metric-lbl">جلسات</span>
+              </div>
+            </div>
+
+            @if (spec.createdAt) {
+              <div class="spec-created-row">
+                <span class="created-lbl">تاريخ الإضافة:</span>
+                <span class="created-val">{{ formatDate(spec.createdAt) }}</span>
+              </div>
+            }
+
+            <div class="spec-card-actions">
+              <button type="button" class="btn btn-secondary btn-sm text-danger" (click)="deleteSpecialist(spec)" title="حذف">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-icon">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>حذف</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Add Specialist Modal -->
+    @if (showAddModal()) {
+      <div class="modal-overlay" (click)="closeAddModal()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">إضافة أخصائي</h3>
+            <button type="button" class="close-modal-btn" (click)="closeAddModal()">&times;</button>
+          </div>
+
+          <form (ngSubmit)="addSpecialist()" class="modal-form">
+            <div class="form-group">
+              <label class="form-label">الاسم *</label>
+              <input
+                type="text"
+                class="form-control"
+                [ngModel]="newSpecName()"
+                (ngModelChange)="newSpecName.set($event)"
+                name="name"
+                required
+                placeholder="الاسم" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">التخصص</label>
+              <input
+                type="text"
+                class="form-control"
+                [ngModel]="newSpecSpecialty()"
+                (ngModelChange)="newSpecSpecialty.set($event)"
+                name="specialty"
+                placeholder="التخصص" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">رقم الهاتف</label>
+              <input
+                type="tel"
+                class="form-control"
+                [ngModel]="newSpecPhone()"
+                (ngModelChange)="newSpecPhone.set($event)"
+                name="phone"
+                dir="ltr"
+                placeholder="الهاتف" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">تاريخ الإضافة</label>
+              <input
+                type="date"
+                class="form-control"
+                [ngModel]="newSpecCreatedAt()"
+                (ngModelChange)="newSpecCreatedAt.set($event)"
+                name="createdAt" />
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeAddModal()">إلغاء</button>
+              <button type="submit" class="btn btn-primary">إضافة</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  }
+</div>
