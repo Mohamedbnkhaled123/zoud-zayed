@@ -617,6 +617,12 @@ input[type="checkbox"]:checked + .custom-switch-indicator {
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
+  &.status-pill-gold {
+    background-color: var(--color-gold-bg);
+    color: var(--color-gold);
+    border: 1px solid var(--color-gold-border);
+  }
+
   &.status-pill-muted {
     background-color: var(--bg-surface);
     color: var(--text-muted);
@@ -688,16 +694,17 @@ input[type="checkbox"]:checked + .custom-switch-indicator {
 
   &.btn-attend-cancelled:hover,
   &.btn-attend-cancelled.active {
-    background-color: #f59e0b;
-    border-color: #d97706;
+    background-color: var(--color-danger);
+    border-color: var(--color-danger);
     color: #ffffff;
   }
 
   &.btn-attend-absent:hover,
   &.btn-attend-absent.active {
-    background-color: var(--color-danger);
-    border-color: var(--color-danger);
+    background: linear-gradient(135deg, #ca8a04 0%, #eab308 100%);
+    border-color: #ca8a04;
     color: #ffffff;
+    box-shadow: 0 2px 6px rgba(234, 179, 8, 0.35);
   }
 }
 

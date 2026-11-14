@@ -210,9 +210,11 @@
                   <td>{{ c.absentCount }}</td>
                   <td>
                     @if (c.todayStatus === 'attended') {
-                      <span class="badge badge-success">حضور</span>
+                      <span class="badge badge-success">Attend</span>
+                    } @else if (c.todayStatus === 'cancelled') {
+                      <span class="badge badge-danger">Cancel</span>
                     } @else if (c.todayStatus === 'absent') {
-                      <span class="badge badge-danger">غائب</span>
+                      <span class="badge badge-gold">No Show</span>
                     } @else {
                       <span class="badge badge-secondary">-</span>
                     }

@@ -79,7 +79,7 @@ export class FinanceComponent {
     const user = this.authService.currentUser();
     if (!user) return 0;
     return this.dataService.sessions()
-      .filter(s => s.specialistId === user.id && s.status === 'attended')
+      .filter(s => s.specialistId === user.id && (s.status === 'attended' || s.status === 'absent'))
       .length;
   });
 
@@ -88,7 +88,9 @@ export class FinanceComponent {
     if (!user) return 0;
     const defaultPrice = this.sessionPrice();
     const myChildren = this.dataService.children().filter(c => c.specialistId === user.id);
-    const mySessions = this.dataService.sessions().filter(s => s.specialistId === user.id && s.status === 'attended');
+    const mySessions = this.dataService.sessions().filter(
+      s => s.specialistId === user.id && (s.status === 'attended' || s.status === 'absent')
+    );
 
     return myChildren.reduce((sum, c) => {
       const attended = mySessions.filter(s => s.childId === c.id).length;
@@ -108,7 +110,9 @@ export class FinanceComponent {
     if (!user) return [];
 
     const children = this.dataService.children().filter(c => c.specialistId === user.id);
-    const sessions = this.dataService.sessions().filter(s => s.specialistId === user.id && s.status === 'attended');
+    const sessions = this.dataService.sessions().filter(
+      s => s.specialistId === user.id && (s.status === 'attended' || s.status === 'absent')
+    );
     const defaultPrice = this.sessionPrice();
 
     return children.map(c => {

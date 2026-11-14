@@ -123,8 +123,7 @@
       <!-- Children Grid Cards -->
       <div class="children-grid">
         @for (child of filteredChildren(); track child.id) {
-          @let sessions = getChildSessions(child.id);
-          @let attendedCount = sessions.length;
+          @let attendedCount = getChildBillableCount(child.id);
           <div class="child-card">
             <div class="child-card-header">
               <div class="child-avatar">
@@ -236,9 +235,9 @@
                   @if (status === 'attended') {
                     <span class="status-pill status-pill-success">Attend ✓</span>
                   } @else if (status === 'cancelled') {
-                    <span class="status-pill status-pill-warning">Cancel</span>
+                    <span class="status-pill status-pill-danger">Cancel</span>
                   } @else if (status === 'absent') {
-                    <span class="status-pill status-pill-danger">No Show ✕</span>
+                    <span class="status-pill status-pill-gold">No Show • محسوب</span>
                   } @else {
                     <span class="status-pill status-pill-muted">غير مسجل</span>
                   }
@@ -289,7 +288,7 @@
                     class="btn-attend btn-attend-absent"
                     [class.active]="curStatus === 'absent'"
                     (click)="markTodayAttendance(child, 'absent')"
-                    title="No Show (الضغط مرة أخرى يلغي التحديد)">
+                    title="No Show (الطالب مجاش - يُضاف في الحساب، الضغط مرة أخرى يلغي التحديد)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -506,9 +505,9 @@
                         @if (s.status === 'attended') {
                           <span class="badge badge-success">Attend</span>
                         } @else if (s.status === 'cancelled') {
-                          <span class="badge badge-warning">Cancel</span>
+                          <span class="badge badge-danger">Cancel</span>
                         } @else {
-                          <span class="badge badge-danger">No Show</span>
+                          <span class="badge badge-gold">No Show (محسوب)</span>
                         }
                         @if (s.isCover) {
                           <span class="badge badge-cover">Cover</span>

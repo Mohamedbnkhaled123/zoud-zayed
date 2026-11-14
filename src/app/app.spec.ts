@@ -530,6 +530,44 @@ describe('Child Schedule Days & Attend/Cancel/No Show & Cover Sessions', () => {
     expect(s3.status).toBe('absent');
   });
 
+  it('should include No Show (absent) in billable earnings and exclude Cancel', () => {
+    dataService.setPriceCalculationEnabled(true);
+    dataService.setDefaultSessionPrice(200);
+
+    const c1 = dataService.addChild({
+      name: 'طفل 1',
+      age: 5,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1'
+    });
+    const c2 = dataService.addChild({
+      name: 'طفل 2',
+      age: 5,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1'
+    });
+    const c3 = dataService.addChild({
+      name: 'طفل 3',
+      age: 5,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1'
+    });
+
+    const today = getTodayString();
+    dataService.recordAttendance(c1.id, 'spec-1', today, 'attended');   // +200
+    dataService.recordAttendance(c2.id, 'spec-1', today, 'absent');     // +200 (No Show = billable)
+    dataService.recordAttendance(c3.id, 'spec-1', today, 'cancelled');  // +0   (Cancel = not billable)
+
+    expect(dataService.totalBillableSessions()).toBe(2);
+    expect(dataService.totalCalculatedEarnings()).toBe(400);
+  });
+
   it('should allow clearing accidental attendance completely', () => {
     const today = getTodayString();
     const child = dataService.addChild({

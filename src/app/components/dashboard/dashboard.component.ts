@@ -111,11 +111,13 @@ export class DashboardComponent {
   readonly totalCalculatedEarnings = computed(() => {
     const defaultPrice = this.sessionPrice();
     return this.myChildren().reduce((sum, c) => {
-      const attended = this.mySessions().filter(s => s.childId === c.id && s.status === 'attended').length;
+      const billable = this.mySessions().filter(
+        s => s.childId === c.id && (s.status === 'attended' || s.status === 'absent')
+      ).length;
       const price = c.sessionPrice !== undefined && c.sessionPrice !== null && c.sessionPrice > 0
         ? c.sessionPrice
         : defaultPrice;
-      return sum + (attended * price);
+      return sum + (billable * price);
     }, 0);
   });
 
@@ -137,6 +139,7 @@ export class DashboardComponent {
       const childSessions = sessions.filter(s => s.childId === c.id);
       const attended = childSessions.filter(s => s.status === 'attended').length;
       const absent = childSessions.filter(s => s.status === 'absent').length;
+      const billable = attended + absent;
       const todaySession = childSessions.find(s => s.date === today);
       const effectivePrice = c.sessionPrice !== undefined && c.sessionPrice !== null && c.sessionPrice > 0
         ? c.sessionPrice
@@ -151,9 +154,9 @@ export class DashboardComponent {
         attendedCount: attended,
         absentCount: absent,
         todayStatus: (todaySession ? todaySession.status : 'unrecorded') as AttendanceStatus | 'unrecorded',
-        totalCost: attended * effectivePrice
+        totalCost: billable * effectivePrice
       };
-    }).sort((a, b) => b.attendedCount - a.attendedCount);
+    }).sort((a, b) => (b.attendedCount + b.absentCount) - (a.attendedCount + a.absentCount));
   });
 
   // Analytics for Accounts

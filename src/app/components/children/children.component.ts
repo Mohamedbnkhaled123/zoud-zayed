@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { Child, AttendanceStatus } from '../../models';
+import { Child, AttendanceStatus, isBillableSessionStatus } from '../../models';
 import { formatArabicDate, getArabicDayName, getTodayString } from '../../utils/arabic-utils';
 
 @Component({
@@ -316,6 +316,10 @@ export class ChildrenComponent {
     const user = this.authService.currentUser();
     if (!user) return [];
     return this.dataService.getSessionsForChild(childId).filter(s => s.specialistId === user.id);
+  }
+
+  getChildBillableCount(childId: string): number {
+    return this.getChildSessions(childId).filter(s => isBillableSessionStatus(s.status)).length;
   }
 
   formatDate(dateStr: string): string {

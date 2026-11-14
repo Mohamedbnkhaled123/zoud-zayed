@@ -24,6 +24,10 @@ export interface Child {
 
 export type AttendanceStatus = 'attended' | 'cancelled' | 'absent';
 
+export function isBillableSessionStatus(status: AttendanceStatus): boolean {
+  return status === 'attended' || status === 'absent';
+}
+
 export interface SessionRecord {
   id: string;
   childId: string;

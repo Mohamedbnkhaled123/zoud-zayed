@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { Specialist, Child, SessionRecord, SystemSettings, AttendanceStatus } from '../models';
+import { Specialist, Child, SessionRecord, SystemSettings, AttendanceStatus, isBillableSessionStatus } from '../models';
 import { getTodayString, formatArabicDate } from '../utils/arabic-utils';
 import { ToastService } from './toast.service';
 
@@ -220,8 +220,8 @@ export class DataService {
         'Cancel'
       );
     } else {
-      this.toast.showError(
-        `تم تسجيل No Show للطفل "${childName}"${coverText} بتاريخ ${date}`,
+      this.toast.showInfo(
+        `تم تسجيل No Show (الطالب مجاش - محسوب) للطفل "${childName}"${coverText} بتاريخ ${date}`,
         'No Show'
       );
     }
@@ -307,8 +307,12 @@ export class DataService {
     return this.sessions().filter(s => s.date === today && s.status === 'attended');
   });
 
+  readonly totalBillableSessions = computed(() =>
+    this.sessions().filter(s => isBillableSessionStatus(s.status)).length
+  );
+
   readonly totalCalculatedEarnings = computed(() => {
     const defaultPrice = this.settings().defaultSessionPrice;
-    return this.totalAttendedSessions() * defaultPrice;
+    return this.totalBillableSessions() * defaultPrice;
   });
 }
