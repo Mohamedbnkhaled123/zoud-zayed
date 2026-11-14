@@ -1,11 +1,11 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { Child, AttendanceStatus } from '../../models';
-import { formatArabicDate, getTodayString } from '../../utils/arabic-utils';
+import { formatArabicDate, getArabicDayName, getTodayString } from '../../utils/arabic-utils';
 
 @Component({
   selector: 'app-children',
@@ -18,12 +18,33 @@ export class ChildrenComponent {
   readonly dataService = inject(DataService);
   readonly authService = inject(AuthService);
   readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly WEEK_DAYS = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+
+  // Day-based auto classification (defaults automatically to today's day)
+  readonly todayDayName = signal<string>(getArabicDayName());
+  readonly selectedDayFilter = signal<string>(getArabicDayName());
 
   // Search & Filter
   readonly searchQuery = signal<string>('');
   readonly selectedDiagnosisFilter = signal<string>('all');
+
+  constructor() {
+    // Auto-update day filter if the app stays open across midnight
+    const timer = setInterval(() => {
+      const currentDay = getArabicDayName();
+      const prevToday = this.todayDayName();
+      if (currentDay !== prevToday) {
+        this.todayDayName.set(currentDay);
+        if (this.selectedDayFilter() === prevToday) {
+          this.selectedDayFilter.set(currentDay);
+        }
+      }
+    }, 60_000);
+
+    this.destroyRef.onDestroy(() => clearInterval(timer));
+  }
 
   // Today Date Strings
   readonly todayDateString = computed(() => getTodayString());
@@ -96,8 +117,13 @@ export class ChildrenComponent {
 
   readonly filteredChildren = computed(() => {
     let list = this.myChildren();
+    const dayFilter = this.selectedDayFilter();
     const query = this.searchQuery().trim().toLowerCase();
     const diagFilter = this.selectedDiagnosisFilter();
+
+    if (dayFilter !== 'all') {
+      list = list.filter(c => c.scheduleDays && c.scheduleDays.includes(dayFilter));
+    }
 
     if (query) {
       list = list.filter(c =>
@@ -114,6 +140,18 @@ export class ChildrenComponent {
 
     return list;
   });
+
+  selectDayFilter(day: string): void {
+    this.selectedDayFilter.set(day);
+  }
+
+  getDayCount(day: string): number {
+    const children = this.myChildren();
+    if (day === 'all') {
+      return children.length;
+    }
+    return children.filter(c => c.scheduleDays && c.scheduleDays.includes(day)).length;
+  }
 
   toggleScheduleDay(day: string): void {
     const cur = this.childScheduleDays();
@@ -139,7 +177,8 @@ export class ChildrenComponent {
     this.guardianName.set('');
     this.guardianPhone.set('');
     this.childSessionPrice.set(null);
-    this.childScheduleDays.set([]);
+    const activeDay = this.selectedDayFilter();
+    this.childScheduleDays.set(activeDay !== 'all' ? [activeDay] : []);
     this.childNotes.set('');
     this.childSpecialistId.set(user.id);
 

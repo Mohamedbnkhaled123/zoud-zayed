@@ -362,6 +362,11 @@ export function getTodayString(): string {
   return formatDateKey(new Date());
 }
 
+export function getArabicDayName(date: Date = new Date()): string {
+  const arabicDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  return arabicDays[date.getDay()];
+}
+
 export function formatArabicDate(dateString: string): string {
   if (!dateString) return '';
   try {

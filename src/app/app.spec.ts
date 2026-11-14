@@ -9,6 +9,7 @@ import {
   doesArabicNameMatch, 
   formatArabicDate, 
   formatCurrency, 
+  getArabicDayName,
   getTodayString, 
   formatDateKey 
 } from './utils/arabic-utils';
@@ -336,6 +337,7 @@ describe('ChildrenComponent Privacy & Specialist Isolation', () => {
 
     const fixture = TestBed.createComponent(ChildrenComponent);
     const comp = fixture.componentInstance;
+    comp.selectDayFilter('all');
 
     // 1. Unauthenticated: 0 children visible
     expect(authService.isAuthenticated()).toBe(false);
@@ -369,6 +371,51 @@ describe('ChildrenComponent Privacy & Specialist Isolation', () => {
     expect(authService.currentUser()?.id).toBe(spec1.id);
     expect(comp.filteredChildren().length).toBe(1);
     expect(comp.filteredChildren()[0].name).toBe('كريم');
+  });
+
+  it('should automatically default day filter to today and classify children by scheduleDays', () => {
+    const spec = dataService.addSpecialist('سارة', 'تخاطب', '');
+    authService.setPasswordAndLogin(spec.id, 'pass123');
+
+    const todayName = getArabicDayName();
+    const otherDay = todayName === 'السبت' ? 'الأحد' : 'السبت';
+
+    dataService.addChild({
+      name: 'طفل اليوم',
+      age: 5,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: spec.id,
+      scheduleDays: [todayName]
+    });
+
+    dataService.addChild({
+      name: 'طفل يوم آخر',
+      age: 6,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: spec.id,
+      scheduleDays: [otherDay]
+    });
+
+    const fixture = TestBed.createComponent(ChildrenComponent);
+    const comp = fixture.componentInstance;
+
+    // Defaults to today's day automatically
+    expect(comp.selectedDayFilter()).toBe(todayName);
+    expect(comp.filteredChildren().length).toBe(1);
+    expect(comp.filteredChildren()[0].name).toBe('طفل اليوم');
+
+    // Switching to otherDay shows that day's child
+    comp.selectDayFilter(otherDay);
+    expect(comp.filteredChildren().length).toBe(1);
+    expect(comp.filteredChildren()[0].name).toBe('طفل يوم آخر');
+
+    // Switching to 'all' shows all children
+    comp.selectDayFilter('all');
+    expect(comp.filteredChildren().length).toBe(2);
   });
 });
 

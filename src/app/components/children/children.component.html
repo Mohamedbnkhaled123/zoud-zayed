@@ -59,11 +59,47 @@
       }
     </div>
 
-    <!-- Children Status Summary -->
+    <!-- Days Auto-Classification Bar (Defaults to Today) -->
     @if (myChildren().length > 0) {
+      <div class="days-filter-bar">
+        <div class="days-filter-header">
+          <span class="days-filter-title">تصنيف الأطفال حسب اليوم:</span>
+          <span class="days-today-hint">اليوم: <strong>{{ todayDayName() }}</strong></span>
+        </div>
+        <div class="days-filter-pills">
+          <button
+            type="button"
+            class="day-filter-pill"
+            [class.active]="selectedDayFilter() === 'all'"
+            (click)="selectDayFilter('all')">
+            <span>الكل</span>
+            <span class="day-count-badge">{{ getDayCount('all') }}</span>
+          </button>
+
+          @for (day of WEEK_DAYS; track day) {
+            <button
+              type="button"
+              class="day-filter-pill"
+              [class.active]="selectedDayFilter() === day"
+              [class.is-today-pill]="day === todayDayName()"
+              (click)="selectDayFilter(day)">
+              <span>{{ day }}</span>
+              @if (day === todayDayName()) {
+                <span class="today-dot-tag">اليوم</span>
+              }
+              <span class="day-count-badge">{{ getDayCount(day) }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Children Status Summary -->
       <div class="results-header">
         <span class="count-text">
           <strong>{{ filteredChildren().length }}</strong> أطفال
+          @if (selectedDayFilter() !== 'all') {
+            <span>في يوم {{ selectedDayFilter() }}</span>
+          }
         </span>
       </div>
     }
@@ -71,7 +107,17 @@
     <!-- Empty State (Clean & Minimal) -->
     @if (filteredChildren().length === 0) {
       <div class="empty-state-simple">
-        <h3 class="empty-title">لا يوجد أطفال مسجلون</h3>
+        @if (myChildren().length === 0) {
+          <h3 class="empty-title">لا يوجد أطفال مسجلون</h3>
+        } @else if (selectedDayFilter() !== 'all') {
+          <h3 class="empty-title">لا يوجد أطفال مجدولون ليوم {{ selectedDayFilter() }}</h3>
+          <p class="empty-desc">يمكنك تحديد أيام الحضور عند إضافة أو تعديل الطفل، أو عرض كافة الأطفال المسجلين.</p>
+          <button type="button" class="btn btn-outline btn-sm show-all-btn" (click)="selectDayFilter('all')">
+            عرض جميع الأطفال ({{ myChildren().length }})
+          </button>
+        } @else {
+          <h3 class="empty-title">لا توجد نتائج مطابقة للبحث</h3>
+        }
       </div>
     } @else {
       <!-- Children Grid Cards -->
