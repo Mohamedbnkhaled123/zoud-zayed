@@ -965,11 +965,197 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+/* Day Categorization Bar */
+.day-categorize-bar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.categorize-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.categorize-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.categorize-date-info {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+
+  strong {
+    color: var(--color-primary);
+  }
+}
+
+.categorize-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.day-cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &.is-current-day {
+    border-color: var(--border-primary);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+
+    .cat-count-badge {
+      background-color: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .selected-day-tag {
+      background-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+  }
+}
+
+.cat-count-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-day-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-primary-soft);
+  color: var(--color-primary);
+}
+
+.day-filter-hint {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.subgroup-filter-note {
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+
+.session-timing-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--bg-primary-soft);
+  border: 1px solid var(--border-primary);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  direction: ltr;
+  text-align: right;
+  width: fit-content;
+}
+
+.child-timing-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  direction: ltr;
+  text-align: right;
+  margin-top: 0.15rem;
+}
+
+.mini-day-chip.highlight-day {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Form Timing Section in Modals */
+.form-timing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+}
+
+.sub-input-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.timing-summary-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  background-color: var(--bg-primary-soft);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+  margin-top: 0.25rem;
+
+  strong {
+    font-weight: 800;
+  }
+}
+
 .empty-state {
   background-color: var(--bg-surface);
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg);
-  padding: 3rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   text-align: center;
   color: var(--text-muted);
 }

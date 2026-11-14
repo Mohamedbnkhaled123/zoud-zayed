@@ -18,6 +18,9 @@ export interface Child {
   specialistId: string;
   sessionPrice?: number;
   scheduleDays?: string[]; // e.g. ['السبت', 'الإثنين', 'الأربعاء']
+  sessionDurationMinutes?: number; // مدة الجلسة بالدقائق مثلاً 45
+  defaultStartTime?: string;       // وقت البدء المعتاد بصيغة "10:00"
+  defaultEndTime?: string;         // وقت الانتهاء المعتاد بصيغة "10:45"
   notes?: string;
   createdAt: string;
 }
@@ -35,6 +38,9 @@ export interface SessionRecord {
   date: string; // format YYYY-MM-DD
   status: AttendanceStatus;
   price?: number;
+  startTime?: string;       // وقت بدء الجلسة بصيغة "10:00"
+  endTime?: string;         // وقت انتهاء الجلسة بصيغة "10:45"
+  durationMinutes?: number; // مدة الجلسة بالدقائق
   isCover?: boolean;
   coveredSpecialistName?: string;
   coveredSpecialistId?: string;

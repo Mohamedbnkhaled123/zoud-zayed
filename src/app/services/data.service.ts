@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Specialist, Child, SessionRecord, SystemSettings, AttendanceStatus, isBillableSessionStatus } from '../models';
-import { getTodayString, formatArabicDate } from '../utils/arabic-utils';
+import { getTodayString, formatArabicDate, calculateDurationMinutes } from '../utils/arabic-utils';
 import { ToastService } from './toast.service';
 
 @Injectable({
@@ -156,7 +156,10 @@ export class DataService {
     notes?: string,
     isCover?: boolean,
     coveredSpecialistName?: string,
-    coveredSpecialistId?: string
+    coveredSpecialistId?: string,
+    startTime?: string,
+    endTime?: string,
+    durationMinutes?: number
   ): SessionRecord {
     const child = this.children().find(c => c.id === childId);
     const effectivePrice = price !== undefined
@@ -164,6 +167,12 @@ export class DataService {
       : (this.settings().enablePriceCalculation && this.settings().defaultSessionPrice > 0
         ? this.settings().defaultSessionPrice
         : 0);
+
+    const effectiveStart = startTime !== undefined ? startTime : child?.defaultStartTime;
+    const effectiveEnd = endTime !== undefined ? endTime : child?.defaultEndTime;
+    const effectiveDuration = durationMinutes !== undefined
+      ? durationMinutes
+      : (calculateDurationMinutes(effectiveStart, effectiveEnd) || child?.sessionDurationMinutes);
 
     const existingIndex = this.sessions().findIndex(s => s.childId === childId && s.date === date);
 
@@ -179,7 +188,10 @@ export class DataService {
         notes: notes !== undefined ? notes : existing.notes,
         isCover: isCover !== undefined ? isCover : existing.isCover,
         coveredSpecialistName: coveredSpecialistName !== undefined ? coveredSpecialistName : existing.coveredSpecialistName,
-        coveredSpecialistId: coveredSpecialistId !== undefined ? coveredSpecialistId : existing.coveredSpecialistId
+        coveredSpecialistId: coveredSpecialistId !== undefined ? coveredSpecialistId : existing.coveredSpecialistId,
+        startTime: effectiveStart !== undefined ? effectiveStart : existing.startTime,
+        endTime: effectiveEnd !== undefined ? effectiveEnd : existing.endTime,
+        durationMinutes: effectiveDuration !== undefined ? effectiveDuration : existing.durationMinutes
       };
 
       const updated = [...this.sessions()];
@@ -193,6 +205,9 @@ export class DataService {
         date,
         status,
         price: effectivePrice,
+        startTime: effectiveStart || '',
+        endTime: effectiveEnd || '',
+        durationMinutes: effectiveDuration,
         isCover: !!isCover,
         coveredSpecialistName: coveredSpecialistName || '',
         coveredSpecialistId: coveredSpecialistId || '',

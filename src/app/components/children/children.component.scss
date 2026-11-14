@@ -743,6 +743,69 @@ input[type="checkbox"]:checked + .custom-switch-indicator {
   border: 1px solid var(--border-primary);
 }
 
+.schedule-timing-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.timing-badge-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.timing-text-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+  text-align: right;
+}
+
+.form-timing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+.sub-input-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.timing-summary-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  background-color: var(--bg-primary-soft);
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+  margin-top: 0.25rem;
+
+  strong {
+    font-weight: 800;
+  }
+}
+
 .schedule-days-selector {
   display: flex;
   flex-wrap: wrap;

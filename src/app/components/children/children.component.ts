@@ -5,7 +5,13 @@ import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { Child, AttendanceStatus, isBillableSessionStatus } from '../../models';
-import { formatArabicDate, getArabicDayName, getTodayString } from '../../utils/arabic-utils';
+import { 
+  formatArabicDate, 
+  getArabicDayName, 
+  getTodayString, 
+  calculateDurationMinutes, 
+  formatSessionTiming 
+} from '../../utils/arabic-utils';
 
 @Component({
   selector: 'app-children',
@@ -91,6 +97,9 @@ export class ChildrenComponent {
   childSpecialistId = signal<string>('');
   childSessionPrice = signal<number | null>(null);
   childScheduleDays = signal<string[]>([]);
+  childStartTime = signal<string>('');
+  childEndTime = signal<string>('');
+  childDurationMinutes = signal<number | null>(null);
   childNotes = signal<string>('');
 
   // Child history view modal
@@ -179,6 +188,9 @@ export class ChildrenComponent {
     this.childSessionPrice.set(null);
     const activeDay = this.selectedDayFilter();
     this.childScheduleDays.set(activeDay !== 'all' ? [activeDay] : []);
+    this.childStartTime.set('');
+    this.childEndTime.set('');
+    this.childDurationMinutes.set(null);
     this.childNotes.set('');
     this.childSpecialistId.set(user.id);
 
@@ -187,6 +199,33 @@ export class ChildrenComponent {
 
   closeModal(): void {
     this.showChildModal.set(false);
+  }
+
+  onStartTimeChange(val: string): void {
+    this.childStartTime.set(val);
+    const end = this.childEndTime();
+    if (val && end) {
+      const dur = calculateDurationMinutes(val, end);
+      if (dur) this.childDurationMinutes.set(dur);
+    }
+  }
+
+  onEndTimeChange(val: string): void {
+    this.childEndTime.set(val);
+    const start = this.childStartTime();
+    if (start && val) {
+      const dur = calculateDurationMinutes(start, val);
+      if (dur) this.childDurationMinutes.set(dur);
+    }
+  }
+
+  onDurationChange(val: any): void {
+    const num = val === '' || val === null ? null : Number(val);
+    this.childDurationMinutes.set(num && !isNaN(num) && num > 0 ? num : null);
+  }
+
+  getSessionTimingFormatted(start?: string | null, end?: string | null, dur?: number | null): string {
+    return formatSessionTiming(start, end, dur);
   }
 
   saveChild(): void {
@@ -206,6 +245,13 @@ export class ChildrenComponent {
       ? Number(this.childSessionPrice())
       : undefined;
 
+    const durVal = this.childDurationMinutes() !== null && this.childDurationMinutes() !== undefined && Number(this.childDurationMinutes()) > 0
+      ? Number(this.childDurationMinutes())
+      : undefined;
+
+    const startVal = this.childStartTime().trim() || undefined;
+    const endVal = this.childEndTime().trim() || undefined;
+
     if (this.isEditing()) {
       const existing = this.dataService.getChildById(this.editingChildId());
       if (!existing || existing.specialistId !== user.id) {
@@ -222,6 +268,9 @@ export class ChildrenComponent {
         specialistId: user.id,
         sessionPrice: priceVal,
         scheduleDays: this.childScheduleDays(),
+        sessionDurationMinutes: durVal,
+        defaultStartTime: startVal,
+        defaultEndTime: endVal,
         notes: this.childNotes().trim(),
         createdAt: existing.createdAt || getTodayString()
       };
@@ -236,6 +285,9 @@ export class ChildrenComponent {
         specialistId: user.id,
         sessionPrice: priceVal,
         scheduleDays: this.childScheduleDays(),
+        sessionDurationMinutes: durVal,
+        defaultStartTime: startVal,
+        defaultEndTime: endVal,
         notes: this.childNotes().trim()
       });
     }
@@ -299,6 +351,9 @@ export class ChildrenComponent {
     this.childSpecialistId.set(user.id);
     this.childSessionPrice.set(child.sessionPrice || null);
     this.childScheduleDays.set(child.scheduleDays || []);
+    this.childStartTime.set(child.defaultStartTime || '');
+    this.childEndTime.set(child.defaultEndTime || '');
+    this.childDurationMinutes.set(child.sessionDurationMinutes || null);
     this.childNotes.set(child.notes || '');
 
     this.showChildModal.set(true);

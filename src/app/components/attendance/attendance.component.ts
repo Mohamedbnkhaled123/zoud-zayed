@@ -5,7 +5,15 @@ import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { AttendanceStatus, Child, SessionRecord } from '../../models';
-import { formatArabicDate, getTodayString, formatDateKey, formatCurrency } from '../../utils/arabic-utils';
+import { 
+  formatArabicDate, 
+  getTodayString, 
+  formatDateKey, 
+  formatCurrency, 
+  getDayNameFromDateKey, 
+  calculateDurationMinutes, 
+  formatSessionTiming 
+} from '../../utils/arabic-utils';
 
 interface CalendarDay {
   dateStr: string;
@@ -34,6 +42,25 @@ export class AttendanceComponent {
   readonly selectedDate = signal<string>(getTodayString());
   readonly currentMonth = signal<Date>(new Date());
 
+  readonly WEEK_DAYS = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+
+  // Day filter for categorize: 'all' or specific day like 'السبت'
+  readonly selectedDayFilter = signal<string>('all');
+
+  readonly selectedDateDayName = computed(() => {
+    return getDayNameFromDateKey(this.selectedDate());
+  });
+
+  selectDayFilter(day: string): void {
+    this.selectedDayFilter.set(day);
+  }
+
+  getDayChildrenCount(day: string): number {
+    const list = this.myChildren();
+    if (day === 'all') return list.length;
+    return list.filter(c => c.scheduleDays && c.scheduleDays.includes(day)).length;
+  }
+
   // Pricing
   readonly isPriceCalculationEnabled = computed(() => this.dataService.settings().enablePriceCalculation);
   readonly sessionPrice = computed(() => this.dataService.settings().defaultSessionPrice);
@@ -44,7 +71,37 @@ export class AttendanceComponent {
   coverColleagueName = signal<string>('');
   coverStatus = signal<AttendanceStatus>('attended');
   coverPrice = signal<number | null>(null);
+  coverStartTime = signal<string>('');
+  coverEndTime = signal<string>('');
+  coverDurationMinutes = signal<number | null>(null);
   coverNotes = signal<string>('');
+
+  onCoverStartTimeChange(val: string): void {
+    this.coverStartTime.set(val);
+    const end = this.coverEndTime();
+    if (val && end) {
+      const dur = calculateDurationMinutes(val, end);
+      if (dur) this.coverDurationMinutes.set(dur);
+    }
+  }
+
+  onCoverEndTimeChange(val: string): void {
+    this.coverEndTime.set(val);
+    const start = this.coverStartTime();
+    if (start && val) {
+      const dur = calculateDurationMinutes(start, val);
+      if (dur) this.coverDurationMinutes.set(dur);
+    }
+  }
+
+  onCoverDurationChange(val: any): void {
+    const num = val === '' || val === null ? null : Number(val);
+    this.coverDurationMinutes.set(num && !isNaN(num) && num > 0 ? num : null);
+  }
+
+  formatTiming(start?: string | null, end?: string | null, dur?: number | null): string {
+    return formatSessionTiming(start, end, dur);
+  }
 
   // Month navigation
   readonly monthNames = [
@@ -106,6 +163,28 @@ export class AttendanceComponent {
 
   readonly selectedDateCoverCount = computed(() => {
     return this.selectedDateSessions().filter(s => s.isCover).length;
+  });
+
+  // Filtered by selected day category (e.g. 'السبت' or 'all')
+  readonly filteredDateSessions = computed<SessionRecord[]>(() => {
+    const day = this.selectedDayFilter();
+    const sessions = this.selectedDateSessions();
+    if (day === 'all') return sessions;
+
+    return sessions.filter(s => {
+      if (s.isCover) return true; // keep cover sessions accessible
+      const child = this.getChildInfo(s.childId);
+      return child?.scheduleDays && child.scheduleDays.includes(day);
+    });
+  });
+
+  readonly filteredUnrecordedChildren = computed<Child[]>(() => {
+    const day = this.selectedDayFilter();
+    const unrecorded = this.myChildren().filter(
+      c => this.getChildStatusOnSelectedDate(c.id) === 'unrecorded'
+    );
+    if (day === 'all') return unrecorded;
+    return unrecorded.filter(c => c.scheduleDays && c.scheduleDays.includes(day));
   });
 
   // Calendar matrix
@@ -279,6 +358,9 @@ export class AttendanceComponent {
     this.coverColleagueName.set('');
     this.coverStatus.set('attended');
     this.coverPrice.set(this.sessionPrice() > 0 ? this.sessionPrice() : null);
+    this.coverStartTime.set('');
+    this.coverEndTime.set('');
+    this.coverDurationMinutes.set(null);
     this.coverNotes.set('');
     this.showCoverModal.set(true);
   }
@@ -293,6 +375,15 @@ export class AttendanceComponent {
     if (ch) {
       if (ch.sessionPrice) {
         this.coverPrice.set(ch.sessionPrice);
+      }
+      if (ch.defaultStartTime) {
+        this.coverStartTime.set(ch.defaultStartTime);
+      }
+      if (ch.defaultEndTime) {
+        this.coverEndTime.set(ch.defaultEndTime);
+      }
+      if (ch.sessionDurationMinutes) {
+        this.coverDurationMinutes.set(ch.sessionDurationMinutes);
       }
       const ownerSpec = this.dataService.getSpecialistById(ch.specialistId);
       if (ownerSpec) {
@@ -318,6 +409,11 @@ export class AttendanceComponent {
     const status = this.coverStatus();
     const priceVal = this.coverPrice() !== null ? Number(this.coverPrice()) : 0;
     const date = this.selectedDate();
+    const startVal = this.coverStartTime().trim() || undefined;
+    const endVal = this.coverEndTime().trim() || undefined;
+    const durVal = this.coverDurationMinutes() !== null && this.coverDurationMinutes() !== undefined && Number(this.coverDurationMinutes()) > 0
+      ? Number(this.coverDurationMinutes())
+      : undefined;
 
     this.dataService.recordAttendance(
       cId,
@@ -327,7 +423,11 @@ export class AttendanceComponent {
       priceVal,
       this.coverNotes().trim(),
       true, // isCover
-      colleague
+      colleague,
+      undefined, // coveredSpecialistId
+      startVal,
+      endVal,
+      durVal
     );
 
     this.closeCoverModal();

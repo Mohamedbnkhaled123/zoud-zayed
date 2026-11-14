@@ -182,6 +182,22 @@
                 </div>
               }
 
+              <!-- Scheduled Timing & Duration -->
+              @if (child.defaultStartTime || child.defaultEndTime || child.sessionDurationMinutes) {
+                <div class="schedule-timing-box">
+                  <span class="timing-badge-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-svg">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 14 14"></polyline>
+                    </svg>
+                    توقيت ومدة الجلسة:
+                  </span>
+                  <span class="timing-text-badge">
+                    {{ getSessionTimingFormatted(child.defaultStartTime, child.defaultEndTime, child.sessionDurationMinutes) }}
+                  </span>
+                </div>
+              }
+
               <div class="meta-row">
                 <span class="meta-label">الأخصائي:</span>
                 <span class="meta-val spec-name">{{ getSpecialistName(child.specialistId) }}</span>
@@ -427,6 +443,55 @@
             </div>
           </div>
 
+          <!-- Session Timing and Duration -->
+          <div class="form-timing-section">
+            <label class="form-label">توقيت ومدة الجلسة</label>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <span class="sub-input-label">بدء الجلسة</span>
+                <input
+                  type="time"
+                  class="form-control"
+                  [ngModel]="childStartTime()"
+                  (ngModelChange)="onStartTimeChange($event)"
+                  name="startTime" />
+              </div>
+
+              <div class="form-group flex-1">
+                <span class="sub-input-label">انتهاء الجلسة</span>
+                <input
+                  type="time"
+                  class="form-control"
+                  [ngModel]="childEndTime()"
+                  (ngModelChange)="onEndTimeChange($event)"
+                  name="endTime" />
+              </div>
+
+              <div class="form-group flex-1">
+                <span class="sub-input-label">المدة (بالدقائق)</span>
+                <input
+                  type="number"
+                  min="5"
+                  step="5"
+                  class="form-control"
+                  [ngModel]="childDurationMinutes()"
+                  (ngModelChange)="onDurationChange($event)"
+                  name="durationMinutes"
+                  placeholder="مثال: 45" />
+              </div>
+            </div>
+            @if (childStartTime() || childEndTime() || childDurationMinutes()) {
+              <div class="timing-summary-preview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-svg">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                <span>ملخص التوقيت: </span>
+                <strong>{{ getSessionTimingFormatted(childStartTime(), childEndTime(), childDurationMinutes()) }}</strong>
+              </div>
+            }
+          </div>
+
           @if (isPriceCalculationEnabled()) {
             <div class="form-group">
               <label class="form-label">سعر الجلسة (ج.م)</label>
@@ -493,6 +558,7 @@
                   <tr>
                     <th>تاريخ الجلسة</th>
                     <th>حالة الحضور</th>
+                    <th>التوقيت والمدة</th>
                     <th>سعر الجلسة</th>
                     <th>ملاحظات</th>
                   </tr>
@@ -512,6 +578,9 @@
                         @if (s.isCover) {
                           <span class="badge badge-cover">Cover</span>
                         }
+                      </td>
+                      <td>
+                        {{ getSessionTimingFormatted(s.startTime, s.endTime, s.durationMinutes) || '-' }}
                       </td>
                       <td>{{ s.price ? s.price + ' ج.م' : '-' }}</td>
                       <td>{{ s.notes || '-' }}</td>

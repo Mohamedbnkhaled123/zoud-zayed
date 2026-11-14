@@ -303,6 +303,112 @@
   white-space: nowrap;
 }
 
+.section-sub-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+/* Categorized Sessions Tabs */
+.session-category-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cat-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+
+    .cat-badge {
+      background-color: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+  }
+}
+
+.cat-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+
+  &.dot-taught {
+    background: linear-gradient(135deg, var(--color-success) 0%, #ca8a04 100%);
+  }
+
+  &.dot-attend {
+    background-color: var(--color-success);
+  }
+
+  &.dot-noshow {
+    background-color: #ca8a04;
+  }
+
+  &.dot-cancel {
+    background-color: var(--color-danger);
+  }
+
+  &.dot-cover {
+    background-color: #8b5cf6;
+  }
+}
+
+.table-child-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  strong {
+    color: var(--text-primary);
+  }
+}
+
+.sub-diag-tag {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 @keyframes sectionExpand {
   from {
     opacity: 0;

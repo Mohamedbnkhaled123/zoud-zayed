@@ -11,8 +11,13 @@ import {
   formatCurrency, 
   getArabicDayName,
   getTodayString, 
-  formatDateKey 
+  formatDateKey,
+  calculateDurationMinutes,
+  formatSessionTiming,
+  getDayNameFromDateKey
 } from './utils/arabic-utils';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { AttendanceComponent } from './components/attendance/attendance.component';
 
 // Polyfill localStorage in test environment if missing
 const storageMap = new Map<string, string>();
@@ -619,5 +624,85 @@ describe('Child Schedule Days & Attend/Cancel/No Show & Cover Sessions', () => {
     expect(coverSession.coveredSpecialistId).toBe('spec-colleague');
     expect(coverSession.specialistId).toBe('spec-covering');
     expect(coverSession.price).toBe(250);
+  });
+
+  it('should calculate session duration and format timing correctly', () => {
+    const dur1 = calculateDurationMinutes('10:00', '10:45');
+    expect(dur1).toBe(45);
+
+    const dur2 = calculateDurationMinutes('09:15', '10:30');
+    expect(dur2).toBe(75);
+
+    const formatted = formatSessionTiming('10:00', '10:45', 45);
+    expect(formatted).toContain('10:00');
+    expect(formatted).toContain('10:45');
+    expect(formatted).toContain('45 دقيقة');
+  });
+
+  it('should save session duration and timing on Child and inherit in recorded session', () => {
+    const child = dataService.addChild({
+      name: 'سامر وليد',
+      age: 6,
+      diagnosis: 'تأخر نمو لغوي',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: 'spec-1',
+      defaultStartTime: '10:00',
+      defaultEndTime: '10:45',
+      sessionDurationMinutes: 45
+    });
+
+    expect(child.defaultStartTime).toBe('10:00');
+    expect(child.defaultEndTime).toBe('10:45');
+    expect(child.sessionDurationMinutes).toBe(45);
+
+    const today = getTodayString();
+    const session = dataService.recordAttendance(child.id, 'spec-1', today, 'attended');
+    expect(session.startTime).toBe('10:00');
+    expect(session.endTime).toBe('10:45');
+    expect(session.durationMinutes).toBe(45);
+  });
+
+  it('should categorize sessions in dashboard including taught-billable (Attend + No Show)', () => {
+    const spec = dataService.addSpecialist('أحمد سامي', 'تخاطب', '');
+    const child = dataService.addChild({
+      name: 'كريم هاني',
+      age: 7,
+      diagnosis: '',
+      guardianName: '',
+      guardianPhone: '',
+      specialistId: spec.id
+    });
+
+    dataService.recordAttendance(child.id, spec.id, '2026-11-10', 'attended');
+    dataService.recordAttendance(child.id, spec.id, '2026-11-11', 'absent'); // No Show
+    dataService.recordAttendance(child.id, spec.id, '2026-11-12', 'cancelled');
+
+    // Authenticate as this specialist
+    const authService = TestBed.inject(AuthService);
+    authService.setPasswordAndLogin(spec.id, 'pass123');
+
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const comp = fixture.componentInstance;
+
+    // Default category is taught-billable: includes attended + absent (No Show)
+    expect(comp.selectedSessionCategory()).toBe('taught-billable');
+    expect(comp.taughtSessionsCount()).toBe(2);
+    expect(comp.categorizedSessions().length).toBe(2);
+
+    // Cancelled category
+    comp.setSessionCategory('cancelled');
+    expect(comp.cancelledSessionsCount()).toBe(1);
+    expect(comp.categorizedSessions().length).toBe(1);
+    expect(comp.categorizedSessions()[0].status).toBe('cancelled');
+
+    // No Show category
+    comp.setSessionCategory('noshow');
+    expect(comp.noshowSessionsCount()).toBe(1);
+    expect(comp.categorizedSessions()[0].status).toBe('absent');
+
+    // All category
+    comp.setSessionCategory('all');
+    expect(comp.categorizedSessions().length).toBe(3);
   });
 });

@@ -137,6 +137,22 @@
         </svg>
         <span>{{ showSpecialistsAnalysis() ? 'إخفاء جدول الأخصائيين' : 'تحليل الأخصائيين' }}</span>
       </button>
+
+      <!-- 5. Toggle Categorized Sessions Log -->
+      <button 
+        type="button" 
+        class="demand-btn" 
+        [class.active]="showSessionsLog()" 
+        (click)="toggleSessionsLog()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <span>{{ showSessionsLog() ? 'إخفاء سجل الجلسات' : 'تصنيف وسجل الجلسات' }}</span>
+      </button>
     </div>
   </div>
 
@@ -269,6 +285,142 @@
                   @if (isPriceCalculationEnabled() && sessionPrice() > 0) {
                     <td class="font-bold amount-cell">{{ s.totalEarnings.toLocaleString('ar-EG') }} ج.م</td>
                   }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- On-Demand Section 5: Categorized Sessions Log -->
+  @if (showSessionsLog()) {
+    <div class="requested-section-box">
+      <div class="section-close-bar">
+        <div>
+          <h4>تصنيف وسجل الجلسات</h4>
+          <span class="section-sub-hint">قائمة الجلسات مقسمة حسب حالة التدريس والغياب والإلغاء</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="toggleSessionsLog()">إغلاق</button>
+      </div>
+
+      <!-- Categories Filter Tabs -->
+      <div class="session-category-tabs">
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'taught-billable'"
+          (click)="setSessionCategory('taught-billable')">
+          <span class="cat-dot dot-taught"></span>
+          <span>تم تدريسها ومحسوبة (Attend + No Show)</span>
+          <span class="cat-badge">{{ taughtSessionsCount() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'attended'"
+          (click)="setSessionCategory('attended')">
+          <span class="cat-dot dot-attend"></span>
+          <span>حضور فعلي (Attend)</span>
+          <span class="cat-badge">{{ attendedCountOnly() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'noshow'"
+          (click)="setSessionCategory('noshow')">
+          <span class="cat-dot dot-noshow"></span>
+          <span>لم يحضر (No Show • محسوب)</span>
+          <span class="cat-badge">{{ noshowSessionsCount() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'cancelled'"
+          (click)="setSessionCategory('cancelled')">
+          <span class="cat-dot dot-cancel"></span>
+          <span>ملغاة (Cancel)</span>
+          <span class="cat-badge">{{ cancelledSessionsCount() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'cover'"
+          (click)="setSessionCategory('cover')">
+          <span class="cat-dot dot-cover"></span>
+          <span>تغطية زميل (Cover)</span>
+          <span class="cat-badge">{{ coverSessionsCount() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="cat-tab-btn"
+          [class.active]="selectedSessionCategory() === 'all'"
+          (click)="setSessionCategory('all')">
+          <span>الكل</span>
+          <span class="cat-badge">{{ mySessions().length }}</span>
+        </button>
+      </div>
+
+      <!-- Sessions List Table -->
+      @if (categorizedSessions().length === 0) {
+        <p class="text-muted text-center py-4">لا توجد جلسات مسجلة في هذا التصنيف.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="zowad-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الطفل</th>
+                <th>تاريخ الجلسة</th>
+                <th>التوقيت والمدة</th>
+                <th>حالة الجلسة</th>
+                @if (isPriceCalculationEnabled()) {
+                  <th>السعر / المستحق</th>
+                }
+                <th>ملاحظات</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sess of categorizedSessions(); track sess.id; let idx = $index) {
+                <tr>
+                  <td class="text-center font-bold">{{ idx + 1 }}</td>
+                  <td>
+                    <div class="table-child-cell">
+                      <strong>{{ getChildName(sess.childId) }}</strong>
+                      @if (getChildDiagnosis(sess.childId)) {
+                        <span class="sub-diag-tag">{{ getChildDiagnosis(sess.childId) }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="font-bold">{{ formatDate(sess.date) }}</td>
+                  <td>
+                    {{ formatTiming(sess.startTime, sess.endTime, sess.durationMinutes) || '-' }}
+                  </td>
+                  <td>
+                    @if (sess.status === 'attended') {
+                      <span class="badge badge-success">Attend ✓</span>
+                    } @else if (sess.status === 'absent') {
+                      <span class="badge badge-gold">No Show • محسوب</span>
+                    } @else {
+                      <span class="badge badge-danger">Cancel ✕</span>
+                    }
+
+                    @if (sess.isCover) {
+                      <span class="badge badge-cover">Cover ({{ sess.coveredSpecialistName || 'زميل' }})</span>
+                    }
+                  </td>
+                  @if (isPriceCalculationEnabled()) {
+                    <td class="font-bold amount-cell">
+                      {{ sess.price ? sess.price.toLocaleString('ar-EG') + ' ج.م' : '-' }}
+                    </td>
+                  }
+                  <td>{{ sess.notes || '-' }}</td>
                 </tr>
               }
             </tbody>

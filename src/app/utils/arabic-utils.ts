@@ -392,3 +392,67 @@ export function formatCurrency(amount: number): string {
   const rounded = Math.round((amount || 0) * 100) / 100;
   return `${rounded.toLocaleString('ar-EG')} ج.م`;
 }
+
+/**
+ * Calculates duration in minutes from start and end time strings formatted as "HH:mm"
+ */
+export function calculateDurationMinutes(startTime?: string | null, endTime?: string | null): number | undefined {
+  if (!startTime || !endTime) return undefined;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return undefined;
+
+  let startTotal = sh * 60 + sm;
+  let endTotal = eh * 60 + em;
+  if (endTotal < startTotal) {
+    endTotal += 24 * 60;
+  }
+  const diff = endTotal - startTotal;
+  return diff > 0 ? diff : undefined;
+}
+
+/**
+ * Formats a 24-hour "HH:mm" time string to Arabic 12-hour format e.g. "10:30 ص" or "02:15 م"
+ */
+export function formatTime12Hour(timeStr?: string | null): string {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return timeStr;
+
+  const period = h >= 12 ? 'م' : 'ص';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mStr = String(m).padStart(2, '0');
+  return `${h12}:${mStr} ${period}`;
+}
+
+/**
+ * Formats full session timing text with start/end times and duration in Arabic
+ * e.g. "10:00 ص - 10:45 ص (45 دقيقة)"
+ */
+export function formatSessionTiming(startTime?: string | null, endTime?: string | null, duration?: number | null): string {
+  const formattedStart = formatTime12Hour(startTime);
+  const formattedEnd = formatTime12Hour(endTime);
+  const calcDur = (duration !== null && duration !== undefined) ? duration : calculateDurationMinutes(startTime, endTime);
+
+  if (formattedStart && formattedEnd) {
+    return calcDur ? `${formattedStart} - ${formattedEnd} (${calcDur} دقيقة)` : `${formattedStart} - ${formattedEnd}`;
+  } else if (formattedStart) {
+    return calcDur ? `بدء: ${formattedStart} (${calcDur} دقيقة)` : `بدء: ${formattedStart}`;
+  } else if (calcDur) {
+    return `${calcDur} دقيقة`;
+  }
+  return '';
+}
+
+/**
+ * Extracts Arabic day name from date string 'YYYY-MM-DD'
+ */
+export function getDayNameFromDateKey(dateKey: string): string {
+  if (!dateKey) return '';
+  try {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    return getArabicDayName(new Date(y, m - 1, d));
+  } catch {
+    return '';
+  }
+}

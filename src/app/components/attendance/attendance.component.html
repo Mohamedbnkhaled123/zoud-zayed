@@ -79,10 +79,50 @@
   <div class="attendance-grid-layout">
     <!-- Right Column (RTL Start): Sessions for the Selected Day -->
     <div class="attendance-list-section">
+      <!-- Day Categorization Filter Bar -->
+      <div class="day-categorize-bar">
+        <div class="categorize-header">
+          <span class="categorize-label">تصنيف الأطفال حسب يوم الحضور:</span>
+          <span class="categorize-date-info">
+            يوم التاريخ المحدد: <strong>{{ selectedDateDayName() }}</strong>
+          </span>
+        </div>
+        <div class="categorize-pills">
+          <button
+            type="button"
+            class="day-cat-pill"
+            [class.active]="selectedDayFilter() === 'all'"
+            (click)="selectDayFilter('all')">
+            <span>الكل</span>
+            <span class="cat-count-badge">{{ myChildren().length }}</span>
+          </button>
+
+          @for (day of WEEK_DAYS; track day) {
+            <button
+              type="button"
+              class="day-cat-pill"
+              [class.active]="selectedDayFilter() === day"
+              [class.is-current-day]="day === selectedDateDayName()"
+              (click)="selectDayFilter(day)">
+              <span>{{ day }}</span>
+              <span class="cat-count-badge">{{ getDayChildrenCount(day) }}</span>
+              @if (day === selectedDateDayName()) {
+                <span class="selected-day-tag">محدد</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
       <div class="section-top-bar">
         <div>
           <h3 class="section-title">جلسات اليوم المحدد</h3>
-          <span class="date-summary">{{ formattedSelectedDate() }}</span>
+          <span class="date-summary">
+            {{ formattedSelectedDate() }}
+            @if (selectedDayFilter() !== 'all') {
+              <strong class="day-filter-hint"> (تصنيف أطفال: {{ selectedDayFilter() }})</strong>
+            }
+          </span>
         </div>
         <span class="badge badge-primary">
           {{ selectedDateSessions().length }} جلسات مسجلة
@@ -90,11 +130,16 @@
       </div>
 
       <!-- 1. Recorded Sessions on this Day -->
-      @if (selectedDateSessions().length > 0) {
+      @if (filteredDateSessions().length > 0) {
         <div class="recorded-sessions-group">
-          <h4 class="subgroup-title">الجلسات المسجلة لهذا اليوم:</h4>
+          <h4 class="subgroup-title">
+            الجلسات المسجلة لهذا اليوم:
+            @if (selectedDayFilter() !== 'all') {
+              <span class="subgroup-filter-note">({{ selectedDayFilter() }})</span>
+            }
+          </h4>
           <div class="children-attendance-cards">
-            @for (session of selectedDateSessions(); track session.id) {
+            @for (session of filteredDateSessions(); track session.id) {
               @let child = getChildInfo(session.childId);
               <div 
                 class="child-record-card" 
@@ -119,6 +164,12 @@
 
                     @if (child && child.diagnosis) {
                       <span class="child-diagnosis">{{ child.diagnosis }}</span>
+                    }
+
+                    @if (session.startTime || session.endTime || session.durationMinutes) {
+                      <span class="session-timing-tag">
+                        ⏰ {{ formatTiming(session.startTime, session.endTime, session.durationMinutes) }}
+                      </span>
                     }
 
                     @if (session.price && session.price > 0) {
@@ -175,7 +226,7 @@
                       class="action-btn btn-absent"
                       [class.active]="session.status === 'absent'"
                       (click)="child ? markAttendance(child, 'absent') : null"
-                      title="No Show (الضغط مجدداً يلغي التسجيل)">
+                      title="No Show (الطالب مجاش - محسوب، الضغط مجدداً يلغي التسجيل)">
                       <span>No Show</span>
                     </button>
                   </div>
@@ -188,72 +239,90 @@
 
       <!-- 2. Children scheduled or owned not yet recorded for this day -->
       <div class="unrecorded-children-group">
-        <h4 class="subgroup-title">تسجيل جلسة لطفل من قائمتك لهذا اليوم:</h4>
+        <h4 class="subgroup-title">
+          تسجيل جلسة لطفل لهذا اليوم:
+          @if (selectedDayFilter() !== 'all') {
+            <span class="subgroup-filter-note">({{ selectedDayFilter() }})</span>
+          }
+        </h4>
         @if (myChildren().length === 0) {
           <div class="empty-state">
             <p>لا يوجد أطفال في قائمتك.</p>
           </div>
+        } @else if (filteredUnrecordedChildren().length === 0) {
+          <div class="empty-state">
+            @if (selectedDayFilter() !== 'all') {
+              <p>لا يوجد أطفال غير مسجلين مجدولين ليوم {{ selectedDayFilter() }}.</p>
+              <button type="button" class="btn btn-outline btn-sm mt-2" (click)="selectDayFilter('all')">
+                عرض جميع الأطفال
+              </button>
+            } @else {
+              <p>تم تسجيل جميع الأطفال لهذا اليوم!</p>
+            }
+          </div>
         } @else {
           <div class="children-attendance-cards">
-            @for (child of myChildren(); track child.id) {
-              @let status = getChildStatusOnSelectedDate(child.id);
-              @if (status === 'unrecorded') {
-                <div class="child-record-card unrecorded-card">
-                  <div class="child-meta">
-                    <div class="child-avatar">
-                      {{ child.name.charAt(0) }}
+            @for (child of filteredUnrecordedChildren(); track child.id) {
+              <div class="child-record-card unrecorded-card">
+                <div class="child-meta">
+                  <div class="child-avatar">
+                    {{ child.name.charAt(0) }}
+                  </div>
+                  <div class="child-info">
+                    <div class="child-name-row">
+                      <h4 class="child-name">{{ child.name }}</h4>
+                      @if (child.age > 0) {
+                        <span class="child-age">({{ child.age }} سنوات)</span>
+                      }
                     </div>
-                    <div class="child-info">
-                      <div class="child-name-row">
-                        <h4 class="child-name">{{ child.name }}</h4>
-                        @if (child.age > 0) {
-                          <span class="child-age">({{ child.age }} سنوات)</span>
+                    @if (child.diagnosis) {
+                      <span class="child-diagnosis">{{ child.diagnosis }}</span>
+                    }
+                    @if (child.defaultStartTime || child.defaultEndTime || child.sessionDurationMinutes) {
+                      <span class="child-timing-hint">
+                        ⏰ {{ formatTiming(child.defaultStartTime, child.defaultEndTime, child.sessionDurationMinutes) }}
+                      </span>
+                    }
+                    @if (child.scheduleDays && child.scheduleDays.length > 0) {
+                      <div class="card-schedule-days">
+                        <span class="days-lbl">أيام الحضور:</span>
+                        @for (d of child.scheduleDays; track d) {
+                          <span class="mini-day-chip" [class.highlight-day]="d === selectedDayFilter()">{{ d }}</span>
                         }
                       </div>
-                      @if (child.diagnosis) {
-                        <span class="child-diagnosis">{{ child.diagnosis }}</span>
-                      }
-                      @if (child.scheduleDays && child.scheduleDays.length > 0) {
-                        <div class="card-schedule-days">
-                          <span class="days-lbl">أيام الحضور:</span>
-                          @for (d of child.scheduleDays; track d) {
-                            <span class="mini-day-chip">{{ d }}</span>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-
-                  <div class="attendance-action-panel">
-                    <span class="status-indicator status-pending">لم يُسجل</span>
-                    <div class="buttons-cluster">
-                      <button
-                        type="button"
-                        class="action-btn btn-present"
-                        (click)="markAttendance(child, 'attended')"
-                        title="تسجيل Attend">
-                        <span>Attend</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        class="action-btn btn-cancel-btn"
-                        (click)="markAttendance(child, 'cancelled')"
-                        title="تسجيل Cancel">
-                        <span>Cancel</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        class="action-btn btn-absent"
-                        (click)="markAttendance(child, 'absent')"
-                        title="تسجيل No Show">
-                        <span>No Show</span>
-                      </button>
-                    </div>
+                    }
                   </div>
                 </div>
-              }
+
+                <div class="attendance-action-panel">
+                  <span class="status-indicator status-pending">لم يُسجل</span>
+                  <div class="buttons-cluster">
+                    <button
+                      type="button"
+                      class="action-btn btn-present"
+                      (click)="markAttendance(child, 'attended')"
+                      title="تسجيل Attend">
+                      <span>Attend</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-btn btn-cancel-btn"
+                      (click)="markAttendance(child, 'cancelled')"
+                      title="تسجيل Cancel">
+                      <span>Cancel</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-btn btn-absent"
+                      (click)="markAttendance(child, 'absent')"
+                      title="تسجيل No Show (الطالب مجاش - محسوب)">
+                      <span>No Show</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             }
           </div>
         }
@@ -386,6 +455,51 @@
                 <span>No Show (لم يحضر)</span>
               </label>
             </div>
+          </div>
+
+          <!-- Cover Timing and Duration -->
+          <div class="form-timing-section">
+            <label class="form-label">توقيت ومدة جلسة التغطية</label>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <span class="sub-input-label">بدء الجلسة</span>
+                <input
+                  type="time"
+                  class="form-control"
+                  [ngModel]="coverStartTime()"
+                  (ngModelChange)="onCoverStartTimeChange($event)"
+                  name="coverStartTime" />
+              </div>
+
+              <div class="form-group flex-1">
+                <span class="sub-input-label">انتهاء الجلسة</span>
+                <input
+                  type="time"
+                  class="form-control"
+                  [ngModel]="coverEndTime()"
+                  (ngModelChange)="onCoverEndTimeChange($event)"
+                  name="coverEndTime" />
+              </div>
+
+              <div class="form-group flex-1">
+                <span class="sub-input-label">المدة (بالدقائق)</span>
+                <input
+                  type="number"
+                  min="5"
+                  step="5"
+                  class="form-control"
+                  [ngModel]="coverDurationMinutes()"
+                  (ngModelChange)="onCoverDurationChange($event)"
+                  name="coverDurationMinutes"
+                  placeholder="مثال: 45" />
+              </div>
+            </div>
+            @if (coverStartTime() || coverEndTime() || coverDurationMinutes()) {
+              <div class="timing-summary-preview">
+                <span>ملخص التوقيت: </span>
+                <strong>{{ formatTiming(coverStartTime(), coverEndTime(), coverDurationMinutes()) }}</strong>
+              </div>
+            }
           </div>
 
           @if (isPriceCalculationEnabled()) {

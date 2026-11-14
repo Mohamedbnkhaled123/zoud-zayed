@@ -4,8 +4,15 @@ import { AttendanceComponent } from '../attendance/attendance.component';
 import { FinanceComponent } from '../finance/finance.component';
 import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
-import { formatArabicDate, formatCurrency, getTodayString } from '../../utils/arabic-utils';
-import { AttendanceStatus } from '../../models';
+import { 
+  formatArabicDate, 
+  formatCurrency, 
+  getTodayString, 
+  formatSessionTiming 
+} from '../../utils/arabic-utils';
+import { AttendanceStatus, SessionRecord } from '../../models';
+
+export type SessionCategoryFilter = 'taught-billable' | 'attended' | 'noshow' | 'cancelled' | 'cover' | 'all';
 
 export interface ChildAnalyticsItem {
   id: string;
@@ -47,6 +54,10 @@ export class DashboardComponent {
   showFinanceAccounts = signal<boolean>(false);
   showChildrenAnalysis = signal<boolean>(false);
   showSpecialistsAnalysis = signal<boolean>(false);
+  showSessionsLog = signal<boolean>(false);
+
+  // Categorize Sessions filter: default to 'taught-billable' (Attend + No Show)
+  selectedSessionCategory = signal<SessionCategoryFilter>('taught-billable');
 
   toggleAttendanceCalendar(): void {
     this.showAttendanceCalendar.update(v => !v);
@@ -62,6 +73,14 @@ export class DashboardComponent {
 
   toggleSpecialistsAnalysis(): void {
     this.showSpecialistsAnalysis.update(v => !v);
+  }
+
+  toggleSessionsLog(): void {
+    this.showSessionsLog.update(v => !v);
+  }
+
+  setSessionCategory(cat: SessionCategoryFilter): void {
+    this.selectedSessionCategory.set(cat);
   }
 
   // User Scoped Data (Strict Privacy - Not visible across users or logged out)
@@ -197,4 +216,62 @@ export class DashboardComponent {
       };
     }).sort((a, b) => b.attendedSessionsCount - a.attendedSessionsCount);
   });
+
+  // Categorized Sessions Analytics
+  readonly taughtSessionsCount = computed(() => {
+    return this.mySessions().filter(s => s.status === 'attended' || s.status === 'absent').length;
+  });
+
+  readonly attendedCountOnly = computed(() => {
+    return this.mySessions().filter(s => s.status === 'attended').length;
+  });
+
+  readonly noshowSessionsCount = computed(() => {
+    return this.mySessions().filter(s => s.status === 'absent').length;
+  });
+
+  readonly cancelledSessionsCount = computed(() => {
+    return this.mySessions().filter(s => s.status === 'cancelled').length;
+  });
+
+  readonly coverSessionsCount = computed(() => {
+    return this.mySessions().filter(s => s.isCover).length;
+  });
+
+  readonly categorizedSessions = computed<SessionRecord[]>(() => {
+    const cat = this.selectedSessionCategory();
+    const list = [...this.mySessions()].sort((a, b) => b.date.localeCompare(a.date));
+
+    switch (cat) {
+      case 'taught-billable':
+        return list.filter(s => s.status === 'attended' || s.status === 'absent');
+      case 'attended':
+        return list.filter(s => s.status === 'attended');
+      case 'noshow':
+        return list.filter(s => s.status === 'absent');
+      case 'cancelled':
+        return list.filter(s => s.status === 'cancelled');
+      case 'cover':
+        return list.filter(s => s.isCover);
+      case 'all':
+      default:
+        return list;
+    }
+  });
+
+  getChildName(childId: string): string {
+    return this.dataService.getChildById(childId)?.name || 'طفل غير معروف';
+  }
+
+  getChildDiagnosis(childId: string): string {
+    return this.dataService.getChildById(childId)?.diagnosis || '';
+  }
+
+  formatDate(dateStr: string): string {
+    return formatArabicDate(dateStr);
+  }
+
+  formatTiming(start?: string, end?: string, dur?: number): string {
+    return formatSessionTiming(start, end, dur);
+  }
 }
